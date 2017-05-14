@@ -42,3 +42,22 @@ Notes:
 * Use `--debug` option if you want more output from the application.
 * Use `--coap-port` option to use another port for the CoAP server (5683 is the
   default).
+
+#### About the available firmwares:
+
+The firmwares name should match the following pattern:
+```
+<filename>-<major version>.<minor version>.<patch version>.elf
+```
+Any file uploaded that doesn't match this pattern is ignored.
+
+The uploaded firmwares are uploaded in the following directory:
+`<ota-server>/otaserver/static/uploads`
+
+To get the version of the latest firmware available, use a CoAP client on
+`version` resource. Example with [libcoap]():
+```
+coap-client -m get coap://[server ip]/version
+v:1 t:CON c:GET i:9236 {} [ ]
+1.0.2
+```
