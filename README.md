@@ -38,6 +38,8 @@ followed the installation steps:
     $ ota-server --static-path=<ota-server>/otaserver/static
 ```
 
+The web application is available at http://localhost:8080
+
 Notes:
 * Use `--debug` option if you want more output from the application.
 * Use `--coap-port` option to use another port for the CoAP server (5683 is the
