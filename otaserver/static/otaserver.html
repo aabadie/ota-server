@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% if favicon %}<link rel="icon" href="{{ favicon }}">{% end %}
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>{{ title }}</title>
+
+    <!-- Material Design fonts -->
+    <link rel="stylesheet" type="text/css"
+          href="//fonts.googleapis.com/css?family=Roboto:300,400,500,700">
+    <link rel="stylesheet" type="text/css"
+          href="//fonts.googleapis.com/icon?family=Material+Icons">
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" type="text/css"
+          href="{{ static_url('node_modules/bootstrap/dist/css/bootstrap.min.css') }}">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" type="text/css"
+          href="{{ static_url('node_modules/font-awesome/css/font-awesome.min.css') }}">
+
+    <!-- Bootstrap Material Design -->
+    <link rel="stylesheet" type="text/css"
+          href="{{ static_url('node_modules/bootstrap-material-design/dist/css/bootstrap-material-design.min.css') }}">
+    <link rel="stylesheet" type="text/css"
+          href="{{ static_url('node_modules/bootstrap-material-design/dist/css/ripples.min.css') }}">
+
+    <!-- Javascript modules -->
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/jquery/dist/jquery.min.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/bootstrap/dist/js/bootstrap.min.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/bootstrap-material-design/dist/js/material.min.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ static_url('node_modules/bootstrap-material-design/dist/js/ripples.min.js') }}"></script>
+
+    <!-- Pyaiot dashboard css -->
+    <link rel="stylesheet" type="text/css" href="{{ static_url('css/otaserver.css') }}">
+</head>
+
+<body style="background-color: #333;">
+    <div class="container-fluid">
+        <div class="firmware-container">
+            <form enctype="multipart/form-data" action="/upload" method="post">
+                <label class="btn btn-primary" for="filearg">Choose firmware</label>
+                <input type="file" name="filearg" id="filearg">
+                </label>
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </form>
+        </div>
+        <div class="firmware-container">
+            <h2>Available firmwares</h2>
+            <ul class="list-group">
+                {% for fw in firmwares %}
+                <li class="list-group-item">
+                    <i class="material-icons">description</i>
+                    {{fw.filename}} -
+                    {{fw.size}} -
+                    {{fw.upload_time}}
+                </li>
+                {% end %}
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

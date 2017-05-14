@@ -1,0 +1,27 @@
+*.pyc
+*.pyo
+.eggs
+*.egg-info/
+.*.swp
+*~
+*.o
+*.DS_Store
+
+
+# Ruby artifacts
+*.gem
+*.rbc
+.bundle
+Gemfile.lock
+
+.pmd
+.checkstyle
+.settings
+.project
+.pydevproject
+parts/
+
+node_modules/
+uploads/
+
+*.log
