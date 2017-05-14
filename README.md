@@ -11,7 +11,7 @@ OTA Server requires Python 3 (>= 3.4) and can be installed with
     $ wget -qO - https://bootstrap.pypa.io/get-pip.py | sudo python3
 ```
 
-Once this repository has been cloned:
+First clone this repository:
 ```
     $ git clone https://github.com/aabadie/ota-server.git
 ```
