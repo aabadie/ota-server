@@ -54,7 +54,7 @@ class OTAServerMainHandler(web.RequestHandler):
 
     @tornado.web.asynchronous
     def get(self, path=None):
-        os.listdir(self.application.upload)
+        os.listdir(self.application.upload_path)
 
         self.render("otaserver.html",
                     favicon=os.path.join(options.static_path,
@@ -69,7 +69,7 @@ class OTAServerUploadHandler(tornado.web.RequestHandler):
     def post(self):
         fileinfo = self.request.files['filearg'][0]
         fname = fileinfo['filename']
-        fullname = os.path.join(self.application.upload, fname)
+        fullname = os.path.join(self.application.upload_path, fname)
 
         # Only manage upload if file is valid
         if check_fname(fname) and not os.path.isfile(fullname):
@@ -92,12 +92,10 @@ class OTAServerApplication(web.Application):
             (r"/upload", OTAServerUploadHandler),
         ]
 
-        self.upload = os.path.join(options.static_path, "uploads/")
-        if not os.path.exists(self.upload):
-            os.makedirs(self.upload)
-
-        self.firmwares = [Firmware(os.path.join(self.upload, fname), fname)
-                          for fname in os.listdir(self.upload)]
+        self.upload_path = options.upload_path
+        self.firmwares = [Firmware(os.path.join(self.upload_path, fname),
+                                   fname)
+                          for fname in os.listdir(self.upload_path)]
 
         settings = dict(debug=True,
                         static_path=options.static_path,
