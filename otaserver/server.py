@@ -15,12 +15,13 @@ from .coap import CoapController
 
 logger = logging.getLogger("otaserver")
 
-__VERSION_RE__ = re.compile("[0-9]+\.[0-9]+\.[0-9]+")
+__FILE_EXT__ = '.bin'
+__VERSION_RE__ = re.compile("[0-9]+")
 
 
 def check_fname(fname):
     fname, ext = os.path.splitext(fname)
-    if ext != '.elf':
+    if ext != __FILE_EXT__:
         return False
 
     return __VERSION_RE__.match(fname.split("-")[-1])
