@@ -49,18 +49,20 @@ class OTAServerUploadHandler(tornado.web.RequestHandler):
             logger.debug("Process content {} and {}".format(body_slot1,
                                                             body_slot2))
 
-            for slot, body in [(filename_slot1, body_slot1),
-                               (filename_slot2, body_slot2)]:
-                logging.debug("Adding firmware '{}', '{}'.".format(slot, body))
+            for filename, body in [(filename_slot1, body_slot1),
+                                   (filename_slot2, body_slot2)]:
+                logging.debug("Adding firmware '{}', '{}'."
+                              .format(filename, body))
 
-                fname_slot = os.path.join(self.application.upload_path, slot)
+                fname_slot = os.path.join(self.application.upload_path,
+                                          filename)
 
-                firmware_slot = Firmware(fname_slot)
-                if firmware_slot.check_filename():
+                firmware = Firmware(fname_slot)
+                if firmware.check_filename():
                     if not os.path.isfile(fname_slot):
                         with open(fname_slot, 'wb') as file_h:
                             file_h.write(body)
-                        self.application.firmwares.append(firmware_slot)
+                        self.application.firmwares.append(firmware)
                         self.application.coap_server.add_resources(
                         os.path.basename(fname_slot))
                         logging.debug("New firmware added '{}'."

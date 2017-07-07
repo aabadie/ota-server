@@ -62,7 +62,7 @@ class Firmware(object):
     @property
     def filename(self):
         """Get firmware filename."""
-        return self.fname
+        return os.path.basename(self.fname)
 
     @property
     def version(self):
