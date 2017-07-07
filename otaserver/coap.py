@@ -158,7 +158,7 @@ class CoapController():
 
         if match == []:
             logger.warning("No firmware filename found for application ID '{}'"
-                           "and slot '{}'").format(appid, slot)
+                           "and slot '{}'".format(appid, slot))
             return ''
 
         return match[0]
