@@ -131,7 +131,7 @@ class CoapController():
 
     def get_latest_firmware_binary(self, appid, slot):
         """Get the latest firmware content."""
-        filename = self.get_latest_firmware_name(appid, slot)
+        filename = self.get_latest_firmware_filename(appid, slot)
         if not filename:
             logger.warning("No firmware filename found for application ID '{}'"
                            "and slot '{}'").format(appid, slot)
@@ -151,6 +151,7 @@ class CoapController():
         """Get the latest firmware content."""
         version = self.get_latest_firmware_version(appid, slot)
         if not version:
+            logger.warning("version is empty")
             return ''
 
         match = [fw for fw in os.listdir(self.fw_path)
@@ -158,7 +159,8 @@ class CoapController():
 
         if match == []:
             logger.warning("No firmware filename found for application ID '{}'"
-                           "and slot '{}'".format(appid, slot))
+                           ", slot '{}' and version {}"
+                           .format(appid, slot, version))
             return ''
 
         return match[0]
