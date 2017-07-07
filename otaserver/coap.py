@@ -93,7 +93,7 @@ class CoapController():
         self.port = port
         self.fw_path = fw_path
         self.root_coap = resource.Site()
-        Context.create_server_context(self.root_coap, bind=('::', self.port))
+        asyncio.async(Context.create_server_context(self.root_coap, bind=('::', self.port)))
 
     def add_resources(self, filename):
         """Add new resources for the given application id."""
@@ -104,6 +104,7 @@ class CoapController():
                                     FirmwareNameResource(self, app_id, slot))
         self.root_coap.add_resource((app_id, slot, 'firmware', ),
                                     FirmwareBinaryResource(self, app_id, slot))
+
 
 
     def get_latest_firmware_version(self, appid, slot):

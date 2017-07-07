@@ -35,11 +35,18 @@ class OTAServerUploadHandler(tornado.web.RequestHandler):
 
     @tornado.web.asynchronous
     def post(self):
-        fileinfo_slot1 = self.request.files['slot1'][0]
-        fileinfo_slot2 = self.request.files['slot2'][0]
-        
-        self.application.add_firmware(fileinfo_slot1)
-        self.application.add_firmware(fileinfo_slot2)
+        if (hasattr(self.request.files, 'slot1') and
+                hasattr(self.request.files, 'slot2')):
+            fileinfo_slot1 = self.request.files['slot1'][0]
+            fileinfo_slot2 = self.request.files['slot2'][0]
+
+            logger.debug("Got files {} and {}"
+                        .format(fileinfo_slot1, fileinfo_slot2))
+
+            self.application.add_firmware(fileinfo_slot1)
+            self.application.add_firmware(fileinfo_slot2)
+        else:
+            logger.debug("No valid post request")
 
         self.redirect("/")
 
