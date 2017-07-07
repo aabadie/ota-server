@@ -10,7 +10,7 @@ from stat import ST_SIZE, ST_MTIME
 
 FILE_EXT = '.bin'
 VERSION_RE = re.compile("0x[0-9]+")
-APPID_RE = re.compile("0x[A-Z0-9]+")
+APPID_RE = re.compile("0x[a-zA-Z0-9]+")
 SLOT_RE = re.compile("slot[1-2]")
 
 
@@ -43,12 +43,18 @@ class Firmware(object):
             return False
 
         if not VERSION_RE.match(fname.split("-")[-1]):
+            logging.warning("Invalid version '{}'"
+                            .format(fname.split("-")[-1]))
             return False
 
         if not APPID_RE.match(fname.split("-")[-2]):
+            logging.warning("Invalid application identifier '{}'"
+                            .format(fname.split("-")[-2]))
             return False
 
-        if not APPID_RE.match(fname.split("-")[-2]):
+        if not SLOT_RE.match(fname.split("-")[-3]):
+            logging.warning("Invalid slot '{}'"
+                            .format(fname.split("-")[-3]))
             return False
 
         return True

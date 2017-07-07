@@ -154,8 +154,10 @@ class CoapController():
             logger.warning("version is empty")
             return ''
 
+        info = set((slot, appid, version))
+
         match = [fw for fw in os.listdir(self.fw_path)
-                 if get_info_from_filename(fw) == (slot, appid, version)]
+                 if set(get_info_from_filename(fw)) == info]
 
         if match == []:
             logger.warning("No firmware filename found for application ID '{}'"
