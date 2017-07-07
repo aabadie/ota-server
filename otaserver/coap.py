@@ -147,7 +147,7 @@ class CoapController():
         return open(filename, 'rb').read()
 
 
-    def get_latest_firmware_name(self, appid, slot):
+    def get_latest_firmware_filename(self, appid, slot):
         """Get the latest firmware content."""
         version = self.get_latest_firmware_version(appid, slot)
         if not version:
