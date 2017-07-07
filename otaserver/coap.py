@@ -120,8 +120,12 @@ class CoapController():
 
         all_versions = [int(get_info_from_filename(fw)[2], 16)
                         for fw in all_firmwares
-                        if (get_info_from_filename(fw)[0] == appid and
-                            get_info_from_filename(fw)[1] == slot)]
+                        if (get_info_from_filename(fw)[1] == appid and
+                            get_info_from_filename(fw)[0] == slot)]
+
+        if all_versions == []:
+            logger.warning('No latest version found')
+            return ''
 
         return str(hex(max(all_versions)))
 
