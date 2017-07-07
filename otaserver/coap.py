@@ -18,11 +18,11 @@ COAP_PORT = 5683
 class FirmwareBinaryResource(resource.Resource):
     """CoAP resource returning the latest firmware."""
 
-    def __init__(self, controller, application_id, firmware_slot):
+    def __init__(self, controller, appid, slot):
         super(FirmwareBinaryResource, self).__init__()
         self._controller = controller
-        self._application_id = application_id
-        self._firmware_slots = firmware_slot
+        self._appid = appid
+        self._slot = slot
 
     @asyncio.coroutine
     def render_get(self, request):
@@ -35,8 +35,7 @@ class FirmwareBinaryResource(resource.Resource):
         logger.debug("CoAP GET received from {}".format(remote))
 
         firmware_binary = self._controller.\
-            get_latest_firmware_binary(self._application_id,
-                                       self._firmware_slots)
+            get_latest_firmware_binary(self._appid, self._slot)
 
         return Message(code=CONTENT, payload=firmware_binary)
 
@@ -44,32 +43,10 @@ class FirmwareBinaryResource(resource.Resource):
 class FirmwareVersionResource(resource.Resource):
     """CoAP resource returning the firmware latest version."""
 
-    def __init__(self, controller, application_id):
+    def __init__(self, controller, appid, slot):
         super(FirmwareVersionResource, self).__init__()
         self._controller = controller
-        self._application_id = application_id
-
-    @asyncio.coroutine
-    def render_get(self, request):
-        """Response to CoAP GET request."""
-        try:
-            remote = request.remote[0]
-        except TypeError:
-            remote = request.remote.sockaddr[0]
-
-        logger.debug("CoAP GET received from {}".format(remote))
-
-        return Message(code=CONTENT,
-                       payload=self._controller
-                       .get_latest_firmware_version().encode('ascii'))
-
-class FirmwareNameResource(resource.Resource):
-    """CoAP resource returning the firmware latest version filename."""
-
-    def __init__(self, controller, application_id, slot):
-        super(FirmwareNameResource, self).__init__()
-        self._controller = controller
-        self._application_id = application_id
+        self._appid = appid
         self._slot = slot
 
     @asyncio.coroutine
@@ -84,7 +61,32 @@ class FirmwareNameResource(resource.Resource):
 
         return Message(code=CONTENT,
                        payload=self._controller
-                       .get_latest_firmware_filename().encode('ascii'))
+                       .get_latest_firmware_version(
+                       self._appid, self._slot).encode('ascii'))
+
+class FirmwareNameResource(resource.Resource):
+    """CoAP resource returning the firmware latest version filename."""
+
+    def __init__(self, controller, appid, slot):
+        super(FirmwareNameResource, self).__init__()
+        self._controller = controller
+        self._appid = appid
+        self._slot = slot
+
+    @asyncio.coroutine
+    def render_get(self, request):
+        """Response to CoAP GET request."""
+        try:
+            remote = request.remote[0]
+        except TypeError:
+            remote = request.remote.sockaddr[0]
+
+        logger.debug("CoAP GET received from {}".format(remote))
+
+        return Message(code=CONTENT,
+                       payload=self._controller
+                       .get_latest_firmware_filename(
+                       self._appid, self._slot).encode('ascii'))
 
 class CoapController():
     """CoAP controller with CoAP server inside."""
@@ -93,19 +95,21 @@ class CoapController():
         self.port = port
         self.fw_path = fw_path
         self.root_coap = resource.Site()
-        asyncio.async(Context.create_server_context(self.root_coap, bind=('::', self.port)))
+        for filename in os.listdir(fw_path):
+            self.add_resources(filename)
+        asyncio.async(Context.create_server_context(self.root_coap,
+                                                    bind=('::', self.port)))
 
     def add_resources(self, filename):
         """Add new resources for the given application id."""
         slot, app_id, _ = get_info_from_filename(filename)
         self.root_coap.add_resource((app_id, 'version',),
-                                    FirmwareVersionResource(self, app_id))
+                                    FirmwareVersionResource(self,
+                                                            app_id, slot))
         self.root_coap.add_resource((app_id, slot, 'name', ),
                                     FirmwareNameResource(self, app_id, slot))
         self.root_coap.add_resource((app_id, slot, 'firmware', ),
                                     FirmwareBinaryResource(self, app_id, slot))
-
-
 
     def get_latest_firmware_version(self, appid, slot):
         """Get the latest firmware version."""

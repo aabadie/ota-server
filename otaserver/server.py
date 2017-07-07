@@ -67,7 +67,6 @@ class OTAServerApplication(web.Application):
         self.firmwares = [Firmware(os.path.join(self.upload_path, fname))
                           for fname in os.listdir(self.upload_path)]
 
-
         settings = dict(debug=True,
                         static_path=options.static_path,
                         template_path=options.static_path,
