@@ -1,60 +1,26 @@
 """Broker application module."""
 
-import re
 import os
 import os.path
-import tornado
 import logging
-import time
-from stat import ST_SIZE, ST_MTIME
+import tornado
 from tornado.options import options
 from tornado import web
 import tornado.platform.asyncio
 
 from .coap import CoapController
+from .firmware import Firmware
+
 
 logger = logging.getLogger("otaserver")
 
-__FILE_EXT__ = '.bin'
-__VERSION_RE__ = re.compile("[0-9]+")
-
-
-def check_fname(fname):
-    fname, ext = os.path.splitext(fname)
-    if ext != __FILE_EXT__:
-        return False
-
-    return __VERSION_RE__.match(fname.split("-")[-1])
-
-
-class Firmware(object):
-
-    def __init__(self, fullname, filename):
-        self.fullname = fullname
-        self.filename = filename
-
-    def __eq__(self, other):
-        return self.fullname == other.fullname
-
-    def __neq__(self, other):
-        return self.fullname != other.fullname
-
-    def __hash__(self):
-        return hash(self.fullname)
-
-    @property
-    def size(self):
-        return os.stat(self.fullname)[ST_SIZE]
-
-    @property
-    def upload_time(self):
-        return time.asctime(time.localtime(os.stat(self.fullname)[ST_MTIME]))
-
 
 class OTAServerMainHandler(web.RequestHandler):
+    """Web application handler for web page."""
 
     @tornado.web.asynchronous
-    def get(self, path=None):
+    def get(self):
+        logging.debug("Handling get request received.")
         os.listdir(self.application.upload_path)
 
         self.render("otaserver.html",
@@ -65,18 +31,15 @@ class OTAServerMainHandler(web.RequestHandler):
 
 
 class OTAServerUploadHandler(tornado.web.RequestHandler):
+    """Web application handler for firmware post requests."""
 
     @tornado.web.asynchronous
     def post(self):
-        fileinfo = self.request.files['filearg'][0]
-        fname = fileinfo['filename']
-        fullname = os.path.join(self.application.upload_path, fname)
-
-        # Only manage upload if file is valid
-        if check_fname(fname) and not os.path.isfile(fullname):
-            with open(fullname, 'wb') as f:
-                f.write(fileinfo['body'])
-            self.application.firmwares.append(Firmware(fullname, fname))
+        fileinfo_slot1 = self.request.files['slot1'][0]
+        fileinfo_slot2 = self.request.files['slot2'][0]
+        
+        self.application.add_firmware(fileinfo_slot1)
+        self.application.add_firmware(fileinfo_slot2)
 
         self.redirect("/")
 
@@ -94,17 +57,34 @@ class OTAServerApplication(web.Application):
         ]
 
         self.upload_path = options.upload_path
-        self.firmwares = [Firmware(os.path.join(self.upload_path, fname),
-                                   fname)
+        self.firmwares = [Firmware(os.path.join(self.upload_path, fname))
                           for fname in os.listdir(self.upload_path)]
+
 
         settings = dict(debug=True,
                         static_path=options.static_path,
                         template_path=options.static_path,
                         )
-        CoapController(os.path.join(options.static_path, "uploads"),
-                       port=options.coap_port)
+        self.coap_server = CoapController(os.path.join(options.static_path,
+                                                       "uploads"),
+                                          port=options.coap_port)
 
         super().__init__(handlers, **settings)
         logger.info('Application started, listening on port {}'
                     .format(options.port))
+
+    def add_firmware(self, slot):
+        """Add firmware to web application."""
+        # Only manage upload if firmware filename is valid
+        fname_slot = os.path.join(self.upload_path, slot['filename'])
+        body_slot = slot["body"]
+
+        firmware_slot = Firmware(fname_slot)
+        if firmware_slot.check_filename():
+            if not os.path.isfile(fname_slot):
+                with open(firmware_slot.filename(), 'wb') as file_h:
+                    file_h.write(body_slot)
+                self.firmwares.append(firmware_slot)
+                self.coap_server.add_resources(
+                    os.path.basename(fname_slot))
+                logging.debug("New firmware {}.".format(fname_slot))
