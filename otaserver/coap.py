@@ -155,7 +155,7 @@ class CoapController():
             return ''
 
         match = [fw for fw in os.listdir(self.fw_path)
-                 if get_info_from_filename(fw) == (appid, slot, version)]
+                 if get_info_from_filename(fw) == (slot, appid, version)]
 
         if match == []:
             logger.warning("No firmware filename found for application ID '{}'"
