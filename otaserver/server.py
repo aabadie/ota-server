@@ -24,8 +24,7 @@ class OTAServerMainHandler(web.RequestHandler):
         os.listdir(self.application.upload_path)
 
         self.render("otaserver.html",
-                    favicon=os.path.join(options.static_path,
-                                         "assets", "favicon.ico"),
+                    favicon=os.path.join("assets", "favicon.ico"),
                     title="OTA Server application",
                     firmwares=self.application.firmwares)
 
