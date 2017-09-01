@@ -19,7 +19,7 @@ First clone this repository:
 Then install OTA server:
 ```
     $ cd ota-server
-    $ sudo pip install .
+    $ sudo pip install . -r requirements.txt
 ```
 
 Finally install the Node modules required (you need to install
@@ -44,6 +44,9 @@ Notes:
 * Use `--debug` option if you want more output from the application.
 * Use `--coap-port` option to use another port for the CoAP server (5683 is the
   default).
+* Use `--dtls` option for enabling CoAP Secure.
+* Use `--coaps-port` option to use another port for the CoAP Secure server (
+    5684 is the default).  This requires `--dtls`).
 
 #### About the available firmwares:
 
