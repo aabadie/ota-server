@@ -9,6 +9,7 @@ from tornado.options import define, options
 
 from .server import OTAServerApplication
 from .coap import COAP_PORT
+from .coap import COAPS_PORT
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)14s - '
@@ -29,6 +30,8 @@ def parse_command_line():
            help="Path where uploaded files are stored.")
     define("port", default=8080, help="Web application HTTP port.")
     define("coap_port", default=COAP_PORT, help="CoAP server port.")
+    define("dtls", default=False, help="Enable CoAP Secure")
+    define("coaps_port", default=COAPS_PORT, help="CoAPS server port")
     define("debug", default=False, help="Enable debug mode.")
     options.parse_command_line()
 
