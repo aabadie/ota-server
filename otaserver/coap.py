@@ -13,6 +13,7 @@ logger = logging.getLogger("otaserver")
 
 
 COAP_PORT = 5683
+COAPS_PORT = 5684
 
 
 class FirmwareBinaryResource(resource.Resource):
@@ -91,14 +92,15 @@ class FirmwareNameResource(resource.Resource):
 class CoapController():
     """CoAP controller with CoAP server inside."""
 
-    def __init__(self, fw_path, port=COAP_PORT):
+    def __init__(self, fw_path, port=COAP_PORT, dtls_enabled=False):
         self.port = port
         self.fw_path = fw_path
         self.root_coap = resource.Site()
         for filename in os.listdir(fw_path):
             self.add_resources(filename)
         asyncio.async(Context.create_server_context(self.root_coap,
-                                                    bind=('::', self.port)))
+                                                    bind=('::', self.port),
+                                                    secure=dtls_enabled))
 
     def add_resources(self, filename):
         """Add new resources for the given application id."""

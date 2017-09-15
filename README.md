@@ -19,7 +19,7 @@ First clone this repository:
 Then install OTA server:
 ```
     $ cd ota-server
-    $ sudo pip install .
+    $ sudo pip install . -r requirements.txt
 ```
 
 Finally install the Node modules required (you need to install
@@ -43,7 +43,8 @@ The web application is available at http://localhost:8080
 Notes:
 * Use `--debug` option if you want more output from the application.
 * Use `--coap-port` option to use another port for the CoAP server (5683 is the
-  default).
+  default). If `use_coaps` is set, this overrides the CoAP Secure (5684) port.
+* Use `--use_coaps` option for enabling CoAP Secure.
 
 #### About the available firmwares:
 
