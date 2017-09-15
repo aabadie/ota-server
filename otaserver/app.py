@@ -29,9 +29,8 @@ def parse_command_line():
            default=__UPLOAD_PATH__,
            help="Path where uploaded files are stored.")
     define("port", default=8080, help="Web application HTTP port.")
-    define("coap_port", default=COAP_PORT, help="CoAP server port.")
-    define("dtls", default=False, help="Enable CoAP Secure")
-    define("coaps_port", default=COAPS_PORT, help="CoAPS server port")
+    define("coap_port", default=COAP_PORT, help="CoAP(S) server port.")
+    define("dtls", default=False, help="Enable CoAP Secure.")
     define("debug", default=False, help="Enable debug mode.")
     options.parse_command_line()
 
@@ -42,6 +41,10 @@ def run(arguments=[]):
         sys.argv[1:] = arguments
 
     parse_command_line()
+
+    # Custom port for CoAP overrides the one for CoAPS IF set
+    if (options.dtls) and (options.coap_port is COAP_PORT):
+        options.coap_port = COAPS_PORT
 
     if options.debug:
         logger.setLevel(logging.DEBUG)
