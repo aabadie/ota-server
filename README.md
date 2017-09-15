@@ -43,8 +43,8 @@ The web application is available at http://localhost:8080
 Notes:
 * Use `--debug` option if you want more output from the application.
 * Use `--coap-port` option to use another port for the CoAP server (5683 is the
-  default). If `--dtls` is set, this overrides the CoAP Secure (5684) port.
-* Use `--dtls` option for enabling CoAP Secure.
+  default). If `use_coaps` is set, this overrides the CoAP Secure (5684) port.
+* Use `--use_coaps` option for enabling CoAP Secure.
 
 #### About the available firmwares:
 
