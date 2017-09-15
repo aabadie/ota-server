@@ -103,7 +103,7 @@ class OTAServerApplication(web.Application):
         self.coap_server = CoapController(os.path.join(options.static_path,
                                                        "uploads"),
                                           port=options.coap_port,
-                                          dtls_enabled=options.dtls)
+                                          dtls_enabled=options.use_coaps)
 
         super().__init__(handlers, **settings)
         logger.info('Application started, listening on port {}'

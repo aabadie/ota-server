@@ -15,6 +15,7 @@ logger = logging.getLogger("otaserver")
 COAP_PORT = 5683
 COAPS_PORT = 5684
 
+
 class FirmwareBinaryResource(resource.Resource):
     """CoAP resource returning the latest firmware."""
 
