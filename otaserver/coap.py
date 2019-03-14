@@ -92,4 +92,4 @@ class CoapController():
         """Get manifest content."""
         _manifest_file = os.path.join(self._store_path(timestamp),
                                       'manifest')
-        return open(_manifest_path, 'rb').read()
+        return open(_manifest_file, 'rb').read()
