@@ -22,6 +22,9 @@ Gemfile.lock
 parts/
 
 node_modules/
-uploads/
+firmwares/
+fixtures/
+
+package-lock.json
 
 *.log

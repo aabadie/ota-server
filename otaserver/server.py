@@ -3,14 +3,14 @@
 import os
 import os.path
 import logging
+import json
+import datetime
 import tornado
 import tornado.platform.asyncio
 from tornado.options import options
 from tornado import web
 
 from coap import CoapController
-from firmware import Firmware
-
 
 logger = logging.getLogger("otaserver")
 
@@ -20,7 +20,6 @@ class OTAServerMainHandler(web.RequestHandler):
 
     def get(self):
         logging.debug("Handling get request received.")
-        os.listdir(self.application.upload_path)
 
         self.render("otaserver.html",
                     favicon=os.path.join("assets", "favicon.ico"),
@@ -28,50 +27,56 @@ class OTAServerMainHandler(web.RequestHandler):
                     firmwares=self.application.firmwares)
 
 
-class OTAServerUploadHandler(tornado.web.RequestHandler):
-    """Web application handler for firmware post requests."""
+class OTAServerFirmwaresHandler(web.RequestHandler):
+    """Handler for getting the available firmwares."""
+
+    def get(self):
+        pass
+
+
+class OTAServerPublishHandler(tornado.web.RequestHandler):
+    """Handler for publishing new firmwares."""
+
+    def _store_firmware(self, directory, manifest, firmware):
+        _store_path = os.path.join(self.application.upload_path, directory)
+        if not os.path.exists(_store_path):
+            os.makedirs(_store_path)
+        _manifest_path = os.path.join(_store_path, 'manifest')
+        _firmware_path = os.path.join(_store_path, 'firmware')
+
+        with open(_manifest_path, 'wb') as f:
+            f.write(manifest)
+        with open(_firmware_path, 'wb') as f:
+            f.write(firmware)
+
+    def store_latest(self, manifest, firmware):
+        self._store_firmware('latest', manifest, firmware)
+
+    def archive_firmware(self, manifest, firmware):
+        timestamp = datetime.datetime.now().strftime('%s')
+        _archive_path = os.path.join('archived', timestamp)
+        self._store_firmware(_archive_path, manifest, firmware)
+        return timestamp
 
     def post(self):
         files = self.request.files
-        if 'slot1' in files and 'slot2' in files:
-            filename_slot1 = files['slot1'][0]['filename']
-            body_slot1 = files['slot1'][0]['body']
+        if 'manifest' in files and 'firmware' in files:
+            manifest_fname = files['manifest'][0]['filename']
+            manifest = files['manifest'][0]['body']
 
-            filename_slot2 = files['slot2'][0]['filename']
-            body_slot2 = files['slot2'][0]['body']
+            logger.debug('Got manifest file %s', manifest_fname)
+            logger.debug('Got manifest body %s', manifest)
 
-            logger.debug("Process files {} and {}".format(filename_slot1,
-                                                          filename_slot2))
+            firmware_fname = files['firmware'][0]['filename']
+            firmware = files['firmware'][0]['body']
 
-            logger.debug("Process content {} and {}".format(body_slot1,
-                                                            body_slot2))
+            logger.debug('Got firmware file %s', firmware_fname)
+            logger.debug('Got firmware body %s', firmware)
 
-            for filename, body in [(filename_slot1, body_slot1),
-                                   (filename_slot2, body_slot2)]:
-                logging.debug("Adding firmware '{}', '{}'."
-                              .format(filename, body))
+            timestamp = self.archive_firmware(manifest, firmware)
+            self.store_latest(manifest, firmware)
 
-                fname_slot = os.path.join(self.application.upload_path,
-                                          filename)
-
-                firmware = Firmware(fname_slot)
-                if firmware.check_filename():
-                    if not os.path.isfile(fname_slot):
-                        with open(fname_slot, 'wb') as file_h:
-                            file_h.write(body)
-                        self.application.firmwares.append(firmware)
-                        self.application.coap_server.add_resources(
-                        os.path.basename(fname_slot))
-                        logging.debug("New firmware added '{}'."
-                                      .format(fname_slot))
-                    else:
-                        logging.debug("Firmware already exists '{}'."
-                                      .format(fname_slot))
-                else:
-                    logging.debug("Invalid firmware name '{}'."
-                                  .format(fname_slot))
-        else:
-            logger.debug("No valid post request")
+            self.application.coap_server.add_resources(timestamp)
 
         logger.debug("Redirect to main page")
         self.redirect("/")
@@ -86,21 +91,31 @@ class OTAServerApplication(web.Application):
 
         handlers = [
             (r"/", OTAServerMainHandler),
-            (r"/upload", OTAServerUploadHandler),
+            (r"/publish", OTAServerPublishHandler),
+            (r"/firmwares", OTAServerFirmwaresHandler),
         ]
 
         self.upload_path = options.upload_path
-        self.firmwares = [Firmware(os.path.join(self.upload_path, fname))
-                          for fname in os.listdir(self.upload_path)]
+        self.setup_dirs()
+        archived_path = os.path.join(self.upload_path, 'archived')
+        self.firmwares = os.listdir(archived_path)
 
         settings = dict(debug=True,
                         static_path=options.static_path,
                         template_path=options.static_path,
                         )
-        self.coap_server = CoapController(os.path.join(options.static_path,
-                                                       "uploads"),
+
+        self.coap_server = CoapController(self.upload_path,
                                           port=options.coap_port)
 
         super().__init__(handlers, **settings)
         logger.info('Application started, listening on port {}'
                     .format(options.port))
+
+    def setup_dirs(self):
+        archived_path = os.path.join(self.upload_path, 'archived')
+        if not os.path.exists(archived_path):
+            os.makedirs(archived_path)
+        latest_path = os.path.join(self.upload_path, 'latest')
+        if not os.path.exists(latest_path):
+            os.makedirs(latest_path)
