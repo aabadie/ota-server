@@ -7,7 +7,7 @@ import aiocoap.resource as resource
 
 from aiocoap import Context, Message, CONTENT
 
-from .firmware import get_info_from_filename
+from firmware import get_info_from_filename
 
 logger = logging.getLogger("otaserver")
 
