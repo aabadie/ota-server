@@ -52,10 +52,6 @@ def run(arguments=[]):
             return
 
     try:
-        # Application ioloop initialization
-        if not tornado.platform.asyncio.AsyncIOMainLoop().initialized():
-            tornado.platform.asyncio.AsyncIOMainLoop().install()
-
         app = OTAServerApplication()
         app.listen(options.port)
         tornado.ioloop.IOLoop.instance().start()
