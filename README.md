@@ -19,7 +19,7 @@ First clone this repository:
 Then install OTA server:
 ```
     $ cd ota-server
-    $ sudo pip install .
+    $ sudo pip install -r requirements.txt
 ```
 
 Finally install the Node modules required (you need to install
@@ -35,7 +35,7 @@ Start the server using `--static-path` to indicate where the html and css files
 are located. They should normally be in `ota-server/ota-server/static` if you
 followed the installation steps:
 ```
-    $ ota-server --static-path=<ota-server>/otaserver/static
+    $ python otaserver/app.py
 ```
 
 The web application is available at http://localhost:8080

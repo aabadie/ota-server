@@ -18,7 +18,6 @@ logger = logging.getLogger("otaserver")
 STATIC_PATH = os.path.join(os.path.dirname(__file__), "static")
 UPLOAD_PATH = os.path.join(STATIC_PATH, "uploads")
 
-
 def parse_command_line():
     """Parse command line arguments for IoT broker application."""
     define("static-path",
