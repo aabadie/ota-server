@@ -8,8 +8,8 @@ import tornado.platform.asyncio
 from tornado.options import options
 from tornado import web
 
-from .coap import CoapController
-from .firmware import Firmware
+from coap import CoapController
+from firmware import Firmware
 
 
 logger = logging.getLogger("otaserver")

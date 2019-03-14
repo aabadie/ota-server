@@ -7,8 +7,8 @@ import logging
 
 from tornado.options import define, options
 
-from .server import OTAServerApplication
-from .coap import COAP_PORT
+from server import OTAServerApplication
+from coap import COAP_PORT
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)14s - '
