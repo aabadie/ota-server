@@ -18,7 +18,6 @@ logger = logging.getLogger("otaserver")
 class OTAServerMainHandler(web.RequestHandler):
     """Web application handler for web page."""
 
-    @web.asynchronous
     def get(self):
         logging.debug("Handling get request received.")
         os.listdir(self.application.upload_path)
@@ -32,7 +31,6 @@ class OTAServerMainHandler(web.RequestHandler):
 class OTAServerUploadHandler(tornado.web.RequestHandler):
     """Web application handler for firmware post requests."""
 
-    @web.asynchronous
     def post(self):
         files = self.request.files
         if 'slot1' in files and 'slot2' in files:
