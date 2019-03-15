@@ -22,8 +22,8 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger("tornado.internal")
 
 parser = argparse.ArgumentParser(description="Test CoAP client")
-parser.add_argument('--host', type=str, default="localhost",
-                    help="Device Coap server host.")
+parser.add_argument('--resource', type=str, default="notify",
+                    help="Device Coap resource.")
 parser.add_argument('--port', type=int, default=5683,
                     help="Device Coap server port.")
 args = parser.parse_args()
@@ -89,7 +89,7 @@ class CoapServer():
 
     def setup_resources(self):
         """Set up controller resources."""
-        self.root_coap.add_resource(('notify', ), NotifyResource())
+        self.root_coap.add_resource((args.resource, ), NotifyResource())
         self.root_coap.add_resource(('.well-known', 'core'),
                           resource.WKCResource(
                               self.root_coap.get_resources_as_linkheader))
