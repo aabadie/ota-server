@@ -30,7 +30,7 @@ def publish(args):
 
 
 def notify(args):
-    response = requests.post(
+    response = requests.put(
         'http://{}:{}/notify'.format(args.ota_host, args.ota_port),
         data=dict(publish_id=args.publish_id,
                   device_urls=','.join(args.device_urls)))
