@@ -15,6 +15,14 @@ COAP_PORT = 5683
 COAP_HOST = '::1'
 
 
+def _remote_address(request):
+    try:
+        remote = request.remote[0]
+    except TypeError:
+        remote = request.remote.sockaddr[0]
+    return remote
+
+
 class FileResource(resource.Resource):
     """CoAP resource returning the content of a binary file."""
 
@@ -25,11 +33,7 @@ class FileResource(resource.Resource):
 
     async def render_get(self, request):
         """Response to CoAP GET request."""
-        try:
-            remote = request.remote[0]
-        except TypeError:
-            remote = request.remote.sockaddr[0]
-
+        remote = _remote_address(request)
         logger.debug("CoAP GET manifest received from {}".format(remote))
         payload = open(self._file_path, 'rb').read()
         return Message(code=CONTENT, payload=payload)
@@ -63,6 +67,7 @@ class CoapServer():
 
 
 async def coap_notify(url, method=PUT, payload=b''):
+    """Send a CoAP request containing an update notification."""
     protocol = await Context.create_client_context(loop=None)
     request = Message(code=method, payload=payload)
     request.set_request_uri('{}://{}'.format(COAP_METHOD, url))

@@ -5,6 +5,7 @@ import os.path
 import logging
 import json
 import datetime
+import asyncio
 import tornado
 import tornado.platform.asyncio
 from tornado.options import options
@@ -28,9 +29,10 @@ class OTAServerMainHandler(web.RequestHandler):
 
 
 class OTAServerNotifyHandler(tornado.web.RequestHandler):
-    """Handler for notifying device of an update."""
+    """Handler for notifying an update to a list of devices."""
 
-    async def post(self):
+    def put(self):
+        """Handle notification of an available update."""
         publish_id = self.request.body_arguments['publish_id'][0].decode()
         publish_path = publish_id.replace('/', '_').replace('\\', '_')
 
@@ -43,34 +45,28 @@ class OTAServerNotifyHandler(tornado.web.RequestHandler):
             COAP_METHOD, options.coap_host, options.coap_port, manifest_url)
         logger.debug('Manifest url is %s', payload)
         for url in devices_urls.split(','):
-            await coap_notify(url, payload=payload.encode())
+            logger.debug('Send update notification at %s', url)
+            asyncio.ensure_future(coap_notify(url, payload=payload.encode()))
 
 
 class OTAServerPublishHandler(tornado.web.RequestHandler):
-    """Handler for publishing new firmwares."""
+    """Handler for storing published firmwares."""
 
-    def _store(self, store_url, manifest, slot0, slot1):
+    def _store(self, store_url, data):
         _store_path = os.path.join(self.application.upload_path, store_url)
         if not os.path.exists(_store_path):
             os.makedirs(_store_path)
-        _manifest_path = os.path.join(_store_path, 'manifest')
-        _slot0_path = os.path.join(_store_path, 'slot0')
-        _slot1_path = os.path.join(_store_path, 'slot1')
 
-        with open(_manifest_path, 'wb') as f:
-            f.write(manifest)
-        with open(_slot0_path, 'wb') as f:
-            f.write(slot0)
-        with open(_slot1_path, 'wb') as f:
-            f.write(slot1)
+        # Store each data in separate files
+        for name, content in data.items():
+            _path = os.path.join(_store_path, name)
+            with open(_path, 'wb') as f:
+                f.write(content)
 
     def post(self):
+        """Handle publication of an update."""
+        # Verify the request contains the required files
         files = self.request.files
-        publish_id = self.request.body_arguments['publish_id'][0].decode()
-        # Cleanup the path
-        store_path = publish_id.replace('/', '_').replace('\\', '_')
-
-        logger.debug('Storing new firmware in %s', publish_id)
         msg = None
         for resource in ('manifest', 'slot0', 'slot1'):
             if resource not in files:
@@ -80,11 +76,20 @@ class OTAServerPublishHandler(tornado.web.RequestHandler):
             self.finish(msg)
             return
 
+        # Load the content of the files from the request
         manifest = files['manifest'][0]['body']
         slot0 = files['slot0'][0]['body']
         slot1 = files['slot0'][0]['body']
+        update_data = {'manifest': manifest, 'slot0': slot0, 'slot1': slot1}
 
-        self._store(store_path, manifest, slot0, slot1)
+        # Get publish identifier
+        publish_id = self.request.body_arguments['publish_id'][0].decode()
+        # Cleanup the path
+        store_path = publish_id.replace('/', '_').replace('\\', '_')
+        logger.debug('Storing %s update in %s', publish_id, store_path)
+
+        # Store the data and create the corresponding CoAP resources
+        self._store(store_path, update_data)
         self.application.coap_server.add_resources(store_path)
 
         # logger.debug("Redirect to main page")
