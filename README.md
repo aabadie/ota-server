@@ -46,7 +46,12 @@ available (this might change in a very near future)
 
 Use the otaclient tool to publish a new version:
 
-    $ python publisher/main.py <manifest.bin> <slot1.bin> <slot2.bin> version_xx <device-ip>/url <other-device-ip>/url2
+    $ python client/publish.py --manifest <manifest.bin> --slot0 <slot0.bin>
+      --slot1 <slot1.bin> version_xx <device-ip>/url <other-device-ip>/url2
+
+Use `--notify-only` to only notify the udpate:
+
+    $ python client/publish.py --notify-only <device-ip>/url <other-device-ip>/url2
 
 #### Fetch the available manifest and firmware slots:
 
