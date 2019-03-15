@@ -8,7 +8,7 @@ import logging
 from tornado.options import define, options
 
 from server import OTAServerApplication
-from coap import COAP_PORT
+from coap import COAP_PORT, COAP_HOST
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)14s - '
@@ -26,7 +26,8 @@ def parse_command_line():
     define("upload-path",
            default=UPLOAD_PATH,
            help="Path where uploaded files are stored.")
-    define("port", default=8080, help="Web application HTTP port.")
+    define("http_port", default=8080, help="Web application HTTP port.")
+    define("coap_host", default=COAP_HOST, help="CoAP server host.")
     define("coap_port", default=COAP_PORT, help="CoAP server port.")
     define("debug", default=False, help="Enable debug mode.")
     options.parse_command_line()
@@ -52,7 +53,7 @@ def run(arguments=[]):
 
     try:
         app = OTAServerApplication()
-        app.listen(options.port)
+        app.listen(options.http_port)
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
         logger.debug("Stopping application")
