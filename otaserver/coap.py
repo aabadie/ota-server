@@ -5,7 +5,7 @@ import asyncio
 import logging
 import aiocoap.resource as resource
 
-from aiocoap import Context, Message, CONTENT, PUT
+from aiocoap import Context, Message, CONTENT, NOT_FOUND, PUT
 
 logger = logging.getLogger("otaserver")
 
@@ -35,6 +35,10 @@ class FileResource(resource.Resource):
         """Response to CoAP GET request."""
         remote = _remote_address(request)
         logger.debug("CoAP GET manifest received from {}".format(remote))
+        if not os.path.isfile(self._file_path):
+            err_msg = "File {} not found on server".format(
+                self._file_path).encode()
+            return Message(code=NOT_FOUND, payload=err_msg)
         payload = open(self._file_path, 'rb').read()
         return Message(code=CONTENT, payload=payload)
 
