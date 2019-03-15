@@ -9,11 +9,13 @@ def parse_args():
                         help="OTA server host.")
     parser.add_argument('--ota-port', type=int, default=8080,
                         help="OTA server port.")
-    parser.add_argument('manifest', type=str, help="manifest file")
-    parser.add_argument('slot0', type=str, help="slot0 binary file")
-    parser.add_argument('slot1', type=str, help="slot1 binary file")
-    parser.add_argument('publish_id', type=str,
+    parser.add_argument('--manifest', type=str, help="manifest file")
+    parser.add_argument('--slot0', type=str, help="slot0 binary file")
+    parser.add_argument('--slot1', type=str, help="slot1 binary file")
+    parser.add_argument('--publish-id', type=str,
                         help="published version identifier, should be unique")
+    parser.add_argument('--notify-only', action='store_true',
+                        help="only notify the given list of device")
     parser.add_argument('device_urls', nargs='+',
                         help="list of device urls to use to notify an update")
     return parser.parse_args()
@@ -38,7 +40,8 @@ def notify(args):
 
 
 def main(args):
-    publish(args)
+    if not args.notify_only:
+        publish(args)
     notify(args)
 
 
