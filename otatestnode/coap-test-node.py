@@ -1,3 +1,6 @@
+"""CoAP test node."""
+
+
 import os
 import os.path
 import sys
@@ -19,24 +22,22 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger("tornado.internal")
 
 parser = argparse.ArgumentParser(description="Test CoAP client")
-parser.add_argument('--gateway-host', type=str, default="localhost",
-                    help="Gateway Coap server host.")
-parser.add_argument('--gateway-port', type=int, default=5683,
-                    help="Gateway Coap server port.")
+parser.add_argument('--host', type=str, default="localhost",
+                    help="Device Coap server host.")
+parser.add_argument('--port', type=int, default=5683,
+                    help="Device Coap server port.")
 args = parser.parse_args()
 
 FIRMWARE_PATH = os.path.join(os.path.dirname(__file__), "firmwares")
-DEVICE_URL = 'coap://{}:{}'.format(args.gateway_host, args.gateway_port)
-COAP_PORT = args.gateway_port
+COAP_PORT = args.port
 
 
-@asyncio.coroutine
-def _coap_resource(url, method=GET, payload=b''):
-    protocol = yield from Context.create_client_context(loop=None)
+async def _get_firmware(url, method=GET, payload=b''):
+    protocol = await Context.create_client_context(loop=None)
     request = Message(code=method, payload=payload)
     request.set_request_uri(url)
     try:
-        response = yield from protocol.request(request).response
+        response = await protocol.request(request).response
     except Exception as e:
         code = "Failed to fetch resource"
         payload = '{0}'.format(e)
@@ -44,97 +45,54 @@ def _coap_resource(url, method=GET, payload=b''):
         code = response.code
         payload = response.payload.decode('utf-8')
     finally:
-        yield from protocol.shutdown()
+        await protocol.shutdown()
 
     logger.debug('Code: {0} - Payload: {1}'.format(code, payload))
-
     return code, payload
 
-@gen.coroutine
-def _get_firmware(url, firmware):
-    code, payload = yield from _coap_resource('{}/{}'.format(url,firmware),
-                                     method=GET)
+class NotifyResource(resource.Resource):
+    """Test node firmware notify resource."""
 
-class UpdateResource(resource.Resource):
-    """Test node firmware update resource."""
+    def __init__(self):
+        super(NotifyResource, self).__init__()
 
-    def __init__(self, controller):
-        super(UpdateResource, self).__init__()
-        self._controller = controller
+    def _store_firmware(self, filename, firmware):
+        _store_path = FIRMWARE_PATH
+        if not os.path.exists(_store_path):
+            os.makedirs(_store_path)
+        _firmware_file_path = os.path.join(_store_path, filename)
 
-    def set_update_url(self, url):
-        self._controller.update_path.data = url
+        with open(_firmware_file_path, 'wb') as f:
+            f.write(firmware.encode('utf-8'))
 
-    async def render_get(self, request):
-        return aiocoap.Message(payload=self._controller.update_path.data)
+    async def _get_new_firmwares(self, update_path):
+        logger.debug('New firmware update available at %s', update_path)
+        _, manifest = await _get_firmware(update_path.decode('utf-8'))
+        self._store_firmware('manifest', manifest)
 
     async def render_put(self, request):
         logger.debug('Code: {0} - Payload: {1}'.format(request.code,
                     request.payload))
-        self.set_update_url(request.payload)
+        await self._get_new_firmwares(request.payload)
         return aiocoap.Message(code=aiocoap.CHANGED,
-                               payload=self._controller.update_path.data)
+                               payload=request.payload)
 
-class ObservedData(object):
-    """Data object that can notify and execute callbacks upon changes."""
-    def __init__(self, value):
-        self._data = value
-        self._observers = []
+class CoapServer():
+    """Coap Server."""
 
-    @property
-    def data(self):
-        return self._data
-
-    @data.setter
-    def data(self, value):
-        self._data = value
-        for callback in self._observers:
-            callback()
-
-    def bind_to(self, callback):
-        self._observers.append(callback)
-
-class UpdateController(object):
-    """Update controller with CoAP server inside."""
-
-    def __init__(self, update_path, port=COAP_PORT):
+    def __init__(self, port=COAP_PORT):
         self.port = port
-        self.update_path = ObservedData(update_path)
-        self.update_path.bind_to(self._get_new_firmwares)
         self.root_coap = resource.Site()
         self.setup_resources()
-
-        asyncio.async(Context.create_server_context(self.root_coap,
+        asyncio.ensure_future(Context.create_server_context(self.root_coap,
                                                     bind=('::', self.port)))
 
     def setup_resources(self):
         """Set up controller resources."""
-        self.root_coap.add_resource(('updates', ), UpdateResource(self))
+        self.root_coap.add_resource(('notify', ), NotifyResource())
         self.root_coap.add_resource(('.well-known', 'core'),
                           resource.WKCResource(
                               self.root_coap.get_resources_as_linkheader))
-
-    def _store_firmware(self, filename, firmware):
-        _store_path = os.path.join(FIRMWARE_PATH)
-        if not os.path.exists(_store_path):
-            os.makedirs(_store_path)
-        _firmware_path = os.path.join(_store_path, filename)
-
-        with open(_firmware_path, 'wb') as f:
-            f.write(firmware)
-
-    def _get_new_firmwares(self):
-        logger.debug('New firmware update available Url %s',
-                      self.update_path.data)
-        # Fetch new Firmware
-        _, manifest await _get_firmware(self.update_path.data, 'manifest')
-        _, slot0 await _get_firmware(self.update_path.data, 'slot0')
-        _, slot1 await _get_firmware(self.update_path.data, 'slot1')
-        # Store new firmware
-        self._store_firmware('manifest', manifest)
-        self._store_firmware('slot0', slot0)
-        self._store_firmware('slot1', slot1)
-
 
 if __name__ == '__main__':
     try:
@@ -143,10 +101,7 @@ if __name__ == '__main__':
         tornado.platform.asyncio.AsyncIOMainLoop().install()
 
         # Aiocoap server initialization
-        coap_server = UpdateController("adsfasd",
-                                          port=args.gateway_port)
-
-        asyncio.async(aiocoap.Context.create_server_context(coap_server.root_coap))
+        coap_server = CoapServer(COAP_PORT)
 
         # Loop forever
         ioloop.run_forever()
