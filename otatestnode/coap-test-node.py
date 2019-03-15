@@ -26,7 +26,8 @@ parser.add_argument('--gateway-port', type=int, default=5683,
 args = parser.parse_args()
 
 FIRMWARE_PATH = os.path.join(os.path.dirname(__file__), "firmwares")
-COAP_PORT = 5683
+DEVICE_URL = 'coap://{}:{}'.format(args.gateway_host, args.gateway_port)
+COAP_PORT = args.gateway_port
 
 
 @asyncio.coroutine
@@ -60,7 +61,7 @@ class UpdateResource(resource.Resource):
     def __init__(self, controller):
         super(UpdateResource, self).__init__()
         self._controller = controller
-        
+
     def set_update_url(self, url):
         self._controller.update_path.data = url
 
@@ -68,13 +69,14 @@ class UpdateResource(resource.Resource):
         return aiocoap.Message(payload=self._controller.update_path.data)
 
     async def render_put(self, request):
-        logger.debug('Code: {0} - Payload: {1}'.format(request.code, 
+        logger.debug('Code: {0} - Payload: {1}'.format(request.code,
                     request.payload))
         self.set_update_url(request.payload)
-        return aiocoap.Message(code=aiocoap.CHANGED, 
+        return aiocoap.Message(code=aiocoap.CHANGED,
                                payload=self._controller.update_path.data)
 
 class ObservedData(object):
+    """Data object that can notify and execute callbacks upon changes."""
     def __init__(self, value):
         self._data = value
         self._observers = []
@@ -122,14 +124,16 @@ class UpdateController(object):
             f.write(firmware)
 
     def _get_new_firmwares(self):
-        logger.debug('New firmware update available Url %s', 
+        logger.debug('New firmware update available Url %s',
                       self.update_path.data)
-        # _get_firmware('manifest')
-        # _get_firmware('slot0')
-        # _get_firmware('slot1')
-        self._store_firmware('manifest', self.update_path.data)
-        self._store_firmware('slot0', self.update_path.data)
-        self._store_firmware('slot1', self.update_path.data)
+        # Fetch new Firmware
+        _, manifest await _get_firmware(self.update_path.data, 'manifest')
+        _, slot0 await _get_firmware(self.update_path.data, 'slot0')
+        _, slot1 await _get_firmware(self.update_path.data, 'slot1')
+        # Store new firmware
+        self._store_firmware('manifest', manifest)
+        self._store_firmware('slot0', slot0)
+        self._store_firmware('slot1', slot1)
 
 
 if __name__ == '__main__':
