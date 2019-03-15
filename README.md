@@ -33,7 +33,7 @@ Notes:
 - Use `--coap-port` option to use another port for the CoAP server (5683 is the
   default)
 
-#### Publish a new version
+#### Publish and notify a new version
 
 A new firmware version must provide 3 files:
 - a manifest, preferably compliant with SUIT standard
