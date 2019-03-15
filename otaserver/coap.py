@@ -33,8 +33,8 @@ class FileResource(resource.Resource):
         return Message(code=CONTENT, payload=payload)
 
 
-class CoapController():
-    """CoAP controller with CoAP server inside."""
+class CoapServer():
+    """CoAP server."""
 
     def __init__(self, upload_path, port=COAP_PORT):
         self.root_coap = resource.Site()

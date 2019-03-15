@@ -10,7 +10,7 @@ import tornado.platform.asyncio
 from tornado.options import options
 from tornado import web
 
-from coap import CoapController
+from coap import CoapServer
 
 logger = logging.getLogger("otaserver")
 
@@ -93,8 +93,7 @@ class OTAServerApplication(web.Application):
                         static_path=options.static_path,
                         template_path=options.static_path,)
 
-        self.coap_server = CoapController(self.upload_path,
-                                          port=options.coap_port)
+        self.coap_server = CoapServer(self.upload_path, port=options.coap_port)
 
         super().__init__(handlers, **settings)
         logger.info('Application started, listening on port {}'
