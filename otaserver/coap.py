@@ -5,7 +5,7 @@ import asyncio
 import logging
 import aiocoap.resource as resource
 
-from aiocoap import Context, Message, CONTENT
+from aiocoap import Context, Message, CONTENT, PUT
 
 logger = logging.getLogger("otaserver")
 
@@ -60,3 +60,22 @@ class CoapServer():
         _resource_file = os.path.join(self.upload_path, store_path, resource)
         self.root_coap.add_resource(_resource_url,
                                     FileResource(self, _resource_file))
+
+
+async def coap_notify(url, method=PUT, payload=b''):
+    protocol = await Context.create_client_context(loop=None)
+    request = Message(code=method, payload=payload)
+    request.set_request_uri('{}://{}'.format(COAP_METHOD, url))
+    try:
+        response = await protocol.request(request).response
+    except Exception as e:
+        code = "Failed to fetch resource"
+        payload = '{}'.format(e)
+    else:
+        code = response.code
+        payload = response.payload.decode('utf-8')
+    finally:
+        await protocol.shutdown()
+
+    logger.debug('{}: {}'.format(code, payload))
+    return code, payload

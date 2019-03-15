@@ -27,6 +27,25 @@ class OTAServerMainHandler(web.RequestHandler):
                     firmwares=self.application.firmwares)
 
 
+class OTAServerNotifyHandler(tornado.web.RequestHandler):
+    """Handler for notifying device of an update."""
+
+    async def post(self):
+        publish_id = self.request.body_arguments['publish_id'][0].decode()
+        publish_path = publish_id.replace('/', '_').replace('\\', '_')
+
+        manifest_url = os.path.join(publish_path, 'manifest')
+        devices_urls = self.request.body_arguments['device_urls'][0].decode()
+        logger.debug('Notifying devices %s of an update of %s',
+                     devices_urls, publish_id)
+
+        payload = '{}://[{}]:{}/{}'.format(
+            COAP_METHOD, options.coap_host, options.coap_port, manifest_url)
+        logger.debug('Manifest url is %s', payload)
+        for url in devices_urls.split(','):
+            await coap_notify(url, payload=payload.encode())
+
+
 class OTAServerPublishHandler(tornado.web.RequestHandler):
     """Handler for publishing new firmwares."""
 
@@ -50,10 +69,8 @@ class OTAServerPublishHandler(tornado.web.RequestHandler):
         publish_id = self.request.body_arguments['publish_id'][0].decode()
         # Cleanup the path
         store_path = publish_id.replace('/', '_').replace('\\', '_')
-        node_url = self.request.body_arguments['node_url'][0].decode()
 
         logger.debug('Storing new firmware in %s', publish_id)
-        logger.debug('Publish new firmware to %s', node_url)
         msg = None
         for resource in ('manifest', 'slot0', 'slot1'):
             if resource not in files:
@@ -84,6 +101,7 @@ class OTAServerApplication(web.Application):
         handlers = [
             (r"/", OTAServerMainHandler),
             (r"/publish", OTAServerPublishHandler),
+            (r"/notify", OTAServerNotifyHandler),
         ]
 
         self.upload_path = options.upload_path
