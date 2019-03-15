@@ -27,59 +27,51 @@ class OTAServerMainHandler(web.RequestHandler):
                     firmwares=self.application.firmwares)
 
 
-class OTAServerFirmwaresHandler(web.RequestHandler):
-    """Handler for getting the available firmwares."""
-
-    def get(self):
-        pass
-
-
 class OTAServerPublishHandler(tornado.web.RequestHandler):
     """Handler for publishing new firmwares."""
 
-    def _store_firmware(self, directory, manifest, firmware):
-        _store_path = os.path.join(self.application.upload_path, directory)
+    def _store(self, store_url, manifest, slot0, slot1):
+        _store_path = os.path.join(self.application.upload_path, store_url)
         if not os.path.exists(_store_path):
             os.makedirs(_store_path)
         _manifest_path = os.path.join(_store_path, 'manifest')
-        _firmware_path = os.path.join(_store_path, 'firmware')
+        _slot0_path = os.path.join(_store_path, 'slot0')
+        _slot1_path = os.path.join(_store_path, 'slot1')
 
         with open(_manifest_path, 'wb') as f:
             f.write(manifest)
-        with open(_firmware_path, 'wb') as f:
-            f.write(firmware)
-
-    def store_latest(self, manifest, firmware):
-        self._store_firmware('latest', manifest, firmware)
-
-    def archive_firmware(self, manifest, firmware):
-        timestamp = datetime.datetime.now().strftime('%s')
-        _archive_path = os.path.join('archived', timestamp)
-        self._store_firmware(_archive_path, manifest, firmware)
-        return timestamp
+        with open(_slot0_path, 'wb') as f:
+            f.write(slot0)
+        with open(_slot1_path, 'wb') as f:
+            f.write(slot1)
 
     def post(self):
         files = self.request.files
-        if 'manifest' in files and 'firmware' in files:
-            manifest_fname = files['manifest'][0]['filename']
-            manifest = files['manifest'][0]['body']
+        publish_id = self.request.body_arguments['publish_id'][0].decode()
+        # Cleanup the path
+        store_path = publish_id.replace('/', '_').replace('\\', '_')
+        node_url = self.request.body_arguments['node_url'][0].decode()
 
-            logger.debug('Got manifest file %s', manifest_fname)
-            logger.debug('Got manifest body %s', manifest)
+        logger.debug('Storing new firmware in %s', publish_id)
+        logger.debug('Publish new firmware to %s', node_url)
+        msg = None
+        for resource in ('manifest', 'slot0', 'slot1'):
+            if resource not in files:
+                msg = "Missing {} file".format(resource)
+        if msg is not None:
+            self.set_status(400, msg)
+            self.finish(msg)
+            return
 
-            firmware_fname = files['firmware'][0]['filename']
-            firmware = files['firmware'][0]['body']
+        manifest = files['manifest'][0]['body']
+        slot0 = files['slot0'][0]['body']
+        slot1 = files['slot0'][0]['body']
 
-            logger.debug('Got firmware file %s', firmware_fname)
-            logger.debug('Got firmware body %s', firmware)
+        self._store(store_path, manifest, slot0, slot1)
+        self.application.coap_server.add_resources(store_path)
 
-            timestamp = self.archive_firmware(manifest, firmware)
-            self.store_latest(manifest, firmware)
-
-            self.application.coap_server.add_resources(timestamp)
-
-        logger.debug("Redirect to main page")
-        self.redirect("/")
+        # logger.debug("Redirect to main page")
+        # self.redirect("/")
 
 
 class OTAServerApplication(web.Application):
@@ -92,18 +84,14 @@ class OTAServerApplication(web.Application):
         handlers = [
             (r"/", OTAServerMainHandler),
             (r"/publish", OTAServerPublishHandler),
-            (r"/firmwares", OTAServerFirmwaresHandler),
         ]
 
         self.upload_path = options.upload_path
-        self.setup_dirs()
-        archived_path = os.path.join(self.upload_path, 'archived')
-        self.firmwares = os.listdir(archived_path)
+        self.firmwares = os.listdir(self.upload_path)
 
         settings = dict(debug=True,
                         static_path=options.static_path,
-                        template_path=options.static_path,
-                        )
+                        template_path=options.static_path,)
 
         self.coap_server = CoapController(self.upload_path,
                                           port=options.coap_port)
@@ -111,11 +99,3 @@ class OTAServerApplication(web.Application):
         super().__init__(handlers, **settings)
         logger.info('Application started, listening on port {}'
                     .format(options.port))
-
-    def setup_dirs(self):
-        archived_path = os.path.join(self.upload_path, 'archived')
-        if not os.path.exists(archived_path):
-            os.makedirs(archived_path)
-        latest_path = os.path.join(self.upload_path, 'latest')
-        if not os.path.exists(latest_path):
-            os.makedirs(latest_path)
