@@ -32,12 +32,15 @@ Notes:
 - Use `--debug` option if you want more output from the application.
 - Use `--coap-port` option to use another port for the CoAP server (5683 is the
   default)
+- Use `--http-port` option to use another port for the HTTP server listening
+  to incoming user updates (8080 is the default)
+- Use `--help` to get the full list options
 
 #### Publish and notify a new version
 
 A new firmware version must provide 3 files:
 - a manifest, preferably compliant with SUIT standard
-- 2 firmwares, one for slot1 on the flash, one for slot2
+- 2 firmwares, one for slot0 on the flash, one for slot1
 
 2 other information are required:
 - the publish id used to identify the new version on the server
