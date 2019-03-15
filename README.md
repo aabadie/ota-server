@@ -49,7 +49,7 @@ Use the otaclient tool to publish a new version:
     $ python client/publish.py --manifest <manifest.bin> --slot0 <slot0.bin>
       --slot1 <slot1.bin> version_xx <device-ip>/url <other-device-ip>/url2
 
-Use `--notify-only` to only notify the udpate:
+Use `--notify-only` to only notify the update:
 
     $ python client/publish.py --notify-only <device-ip>/url <other-device-ip>/url2
 
