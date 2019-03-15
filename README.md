@@ -5,61 +5,64 @@ provides a firmware upload mechanism.
 
 #### Installation
 
-OTA Server requires Python 3 (>= 3.4) and can be installed with
-[pip](https://github.com/pypa/pip). So you have to install pip for Python 3:
-```
+OTA Server requires Python 3 (>= 3.5).
+All requirements can be installed with [pip](https://github.com/pypa/pip).
+
+1. Install pip for Python 3 using:
+
     $ wget -qO - https://bootstrap.pypa.io/get-pip.py | sudo python3
-```
 
-First clone this repository:
-```
+2. Then clone this repository:
+
     $ git clone https://github.com/aabadie/ota-server.git
-```
 
-Then install OTA server:
-```
+3. Install the OTA server dependencies:
+
     $ cd ota-server
     $ sudo pip install -r requirements.txt
-```
 
-Finally install the Node modules required (you need to install
-[npm](https://www.npmjs.com/get-npm) first):
-```
-    $ cd ota-server/otaserver/static
-    $ npm install
-```
+#### Run the server
 
-#### Running the server
+Starting the server is as simple as:
 
-Start the server using `--static-path` to indicate where the html and css files
-are located. They should normally be in `ota-server/ota-server/static` if you
-followed the installation steps:
-```
     $ python otaserver/app.py
-```
-
-The web application is available at http://localhost:8080
 
 Notes:
-* Use `--debug` option if you want more output from the application.
-* Use `--coap-port` option to use another port for the CoAP server (5683 is the
-  default).
 
-#### About the available firmwares:
+- Use `--debug` option if you want more output from the application.
+- Use `--coap-port` option to use another port for the CoAP server (5683 is the
+  default)
 
-The firmwares name should match the following pattern:
-```
-<filename>-<major version>.<minor version>.<patch version>.elf
-```
-Any file uploaded that doesn't match this pattern is ignored.
+#### Publish a new version
 
-The uploaded firmwares are uploaded in the following directory:
-`<ota-server>/otaserver/static/uploads`
+A new firmware version must provide 3 files:
+- a manifest, preferably compliant with SUIT standard
+- 2 firmwares, one for slot1 on the flash, one for slot2
+
+2 other information are required:
+- the publish id used to identify the new version on the server
+- the device notification url to notify a device that a new version is
+available (this might change in a very near future)
+
+Use the otaclient tool to publish a new version:
+
+    $ python otaclient/publisher.py <manifest.bin> <slot1.bin> <slot2.bin> version_xx <device-ip>/url
+
+#### Fetch the available manifest and firmware slots:
+
+Each files of new version can be retrieved under the `<publish_id>` endpoint on
+the CoAP server:
+
+- `<publish_id>/manifest`
+- `<publish_id>/slot0`
+- `<publish_id>/slot1`
 
 To get the version of the latest firmware available, use a CoAP client on
-`version` resource. Example with [libcoap]():
-```
-coap-client -m get coap://[server ip]/version
-v:1 t:CON c:GET i:9236 {} [ ]
-1.0.2
-```
+the corresponding resource. Example with [libcoap]():
+
+    $ coap-client -m get coap://[server ip]/<publish_id>/manifest
+    v:1 t:CON c:GET i:9236 {} [ ]
+    <content of the manifest>
+    $ coap-client -m get coap://[server ip]/<publish_id>/slot0
+    v:1 t:CON c:GET i:9236 {} [ ]
+    <content of slot0>
