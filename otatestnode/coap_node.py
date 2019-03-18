@@ -8,18 +8,18 @@ import asyncio
 import logging
 import argparse
 
-import tornado.platform.asyncio
-from tornado import gen
-from tornado.ioloop import PeriodicCallback
-
 import aiocoap
 import aiocoap.resource as resource
-from aiocoap import Context, Message, GET, POST
+from aiocoap import Context, Message, GET, POST, CHANGED
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s - %(name)14s - '
-                           '%(levelname)5s - %(message)s')
-logger = logging.getLogger("tornado.internal")
+
+LOGGER = logging.getLogger("otatestnode")
+LOGGER.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)-15s %(levelname)-7s '
+                              '%(filename)10s:%(lineno)-3d %(message)s')
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setFormatter(formatter)
+LOGGER.addHandler(console_handler)
 
 parser = argparse.ArgumentParser(description="Test CoAP client")
 parser.add_argument('--resource', type=str, default="notify",
@@ -40,15 +40,16 @@ async def _get_firmware(url, method=GET, payload=b''):
         response = await protocol.request(request).response
     except Exception as e:
         code = "Failed to fetch resource"
-        payload = '{0}'.format(e)
+        payload = '{}'.format(e)
     else:
         code = response.code
         payload = response.payload.decode('utf-8')
     finally:
         await protocol.shutdown()
 
-    logger.debug('Code: {0} - Payload: {1}'.format(code, payload))
+    LOGGER.debug('{}: {}'.format(code, payload))
     return code, payload
+
 
 class NotifyResource(resource.Resource):
     """Test node firmware notify resource."""
@@ -66,16 +67,15 @@ class NotifyResource(resource.Resource):
             f.write(firmware.encode('utf-8'))
 
     async def _get_new_firmwares(self, update_path):
-        logger.debug('New firmware update available at %s', update_path)
+        LOGGER.debug('Fetching firmware update at %s', update_path.decode())
         _, manifest = await _get_firmware(update_path.decode('utf-8'))
         self._store_firmware('manifest', manifest)
 
-    async def render_put(self, request):
-        logger.debug('Code: {0} - Payload: {1}'.format(request.code,
-                    request.payload))
+    async def render_post(self, request):
+        LOGGER.debug('Update available at {}'.format(request.payload.decode()))
         await self._get_new_firmwares(request.payload)
-        return aiocoap.Message(code=aiocoap.CHANGED,
-                               payload=request.payload)
+        return aiocoap.Message(code=CHANGED, payload=request.payload)
+
 
 class CoapServer():
     """Coap Server."""
@@ -83,23 +83,16 @@ class CoapServer():
     def __init__(self, port=COAP_PORT):
         self.port = port
         self.root_coap = resource.Site()
-        self.setup_resources()
-        asyncio.ensure_future(Context.create_server_context(self.root_coap,
-                                                    bind=('::', self.port)))
-
-    def setup_resources(self):
-        """Set up controller resources."""
         self.root_coap.add_resource((args.resource, ), NotifyResource())
-        self.root_coap.add_resource(('.well-known', 'core'),
-                          resource.WKCResource(
-                              self.root_coap.get_resources_as_linkheader))
+        asyncio.ensure_future(
+            Context.create_server_context(self.root_coap,
+                                          bind=('::', self.port)))
+        LOGGER.debug("CoAP server started, listening on port %s", COAP_PORT)
+
 
 if __name__ == '__main__':
     try:
-        # Tornado ioloop initialization
         ioloop = asyncio.get_event_loop()
-        tornado.platform.asyncio.AsyncIOMainLoop().install()
-
         # Aiocoap server initialization
         coap_server = CoapServer(COAP_PORT)
 
