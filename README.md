@@ -43,18 +43,26 @@ A new firmware version must provide 3 files:
 - 2 firmwares, one for slot0 on the flash, one for slot1
 
 2 other information are required:
-- the publish id used to identify the new version on the server
-- the device notification url to notify a device that a new version is
-available (this might change in a very near future)
+- the publish id used to identify a set of files on the server
+- the device notification url to notify a device that a new version manifest is
+  available
 
-Use the otaclient tool to publish a new version:
+Use the otaclient tool to publish new files:
 
-    $ python client/publish.py --manifest <manifest.bin> --slot0 <slot0.bin>
-      --slot1 <slot1.bin> --publish-id <publish_id> <device-ip>/url <other-device-ip>/url2
+    $ python client/otaclient.py --publish-id <publish_id> --files <file1> <file2>
 
-Use `--notify-only` to only notify the update:
+Use the otaclient tool to publish the manifest corresponding to these files:
 
-    $ python client/publish.py --notify-only --publish-id <publish_id> <device-ip>/url <other-device-ip>/url2
+    $ python client/otaclient.py --publish-id <publish_id> --manifest <manifest.bin>
+
+Use the otaclient tool to notify an update:
+
+    $ python client/otaclient.py --publish-id <publish_id> --notify <device-ip>/url <other-device-ip>/url2
+
+All commands can be combined in a single one to:
+- publish different image files
+- publish a new manifest
+- notify a list of device
 
 #### Fetch the available manifest and firmware slots:
 
@@ -62,8 +70,8 @@ Each files of new version can be retrieved under the `<publish_id>` endpoint on
 the CoAP server:
 
 - `<publish_id>/manifest`
-- `<publish_id>/slot0`
-- `<publish_id>/slot1`
+- `<publish_id>/file1`
+- `<publish_id>/file2`
 
 To get the version of the latest firmware available, use a CoAP client on
 the corresponding resource. Example with [libcoap]():
@@ -71,6 +79,9 @@ the corresponding resource. Example with [libcoap]():
     $ coap-client -m get coap://[server ip]/<publish_id>/manifest
     v:1 t:CON c:GET i:9236 {} [ ]
     <content of the manifest>
-    $ coap-client -m get coap://[server ip]/<publish_id>/slot0
+    $ coap-client -m get coap://[server ip]/<publish_id>/file1
     v:1 t:CON c:GET i:9236 {} [ ]
-    <content of slot0>
+    <content of file1>
+    $ coap-client -m get coap://[server ip]/<publish_id>/file2
+    v:1 t:CON c:GET i:9236 {} [ ]
+    <content of file2>

@@ -16,6 +16,11 @@ from coap import CoapServer, coap_notify, COAP_METHOD
 logger = logging.getLogger("otaserver")
 
 
+def _path_from_publish_id(publish_id):
+    _path = publish_id.replace('/', '_').replace('\\', '_')
+    return _path
+
+
 class OTAServerMainHandler(web.RequestHandler):
     """Web application handler for web page."""
 
@@ -31,13 +36,22 @@ class OTAServerMainHandler(web.RequestHandler):
 class OTAServerNotifyHandler(tornado.web.RequestHandler):
     """Handler for notifying an update to a list of devices."""
 
-    def put(self):
+    def post(self):
         """Handle notification of an available update."""
         publish_id = self.request.body_arguments['publish_id'][0].decode()
-        publish_path = publish_id.replace('/', '_').replace('\\', '_')
+        publish_path = _path_from_publish_id(publish_id)
 
         manifest_url = os.path.join(publish_path, 'manifest')
-        devices_urls = self.request.body_arguments['device_urls'][0].decode()
+        manifest_store_path = os.path.join(self.application.upload_path,
+                                           manifest_url)
+        if not os.path.isfile(manifest_store_path):
+            msg = ("Manifest is not available for publish id {}."
+                   .format(publish_id))
+            self.set_status(400, msg)
+            self.finish(msg)
+            return
+
+        devices_urls = self.request.body_arguments['urls'][0].decode()
         logger.debug('Notifying devices %s of an update of %s',
                      devices_urls, publish_id)
 
@@ -68,24 +82,22 @@ class OTAServerPublishHandler(tornado.web.RequestHandler):
         # Verify the request contains the required files
         files = self.request.files
         msg = None
-        for resource in ('manifest', 'slot0', 'slot1'):
-            if resource not in files:
-                msg = "Missing {} file".format(resource)
+        if len(files) == 0:
+            msg = "No file found in request"
         if msg is not None:
             self.set_status(400, msg)
             self.finish(msg)
             return
 
         # Load the content of the files from the request
-        manifest = files['manifest'][0]['body']
-        slot0 = files['slot0'][0]['body']
-        slot1 = files['slot0'][0]['body']
-        update_data = {'manifest': manifest, 'slot0': slot0, 'slot1': slot1}
+        update_data = {}
+        for file in files:
+            update_data[os.path.basename(file)] = files[file][0]['body']
 
         # Get publish identifier
         publish_id = self.request.body_arguments['publish_id'][0].decode()
         # Cleanup the path
-        store_path = publish_id.replace('/', '_').replace('\\', '_')
+        store_path = _path_from_publish_id(publish_id)
         logger.debug('Storing %s update in %s', publish_id, store_path)
 
         # Store the data and create the corresponding CoAP resources
