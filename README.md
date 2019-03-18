@@ -61,6 +61,8 @@ Use the provided python client to publish and notify updates:
 
     $ python client/otaclient.py --publish-id <publish_id> --notify <device-ip>/url <other-device-ip>/url2
 
+- combine the previous commands to perform all 3 actions in one call.
+
 All 3 previous actions can also be done using the `curl` command line tool:
 
 - publish new files:
@@ -75,11 +77,6 @@ All 3 previous actions can also be done using the `curl` command line tool:
 - notify an update to a list of device:
 
     $ curl -X POST -F 'publish_id=<publish-id>' -F 'urls=<device-ip/>url,<other-device-ip/>url2' http://<server-address>:8080/notify
-
-All commands (python client or curl) can be combined in a single one to:
-- publish different image files
-- publish a new manifest
-- notify a list of device
 
 #### Fetch the available manifest and firmware slots:
 
