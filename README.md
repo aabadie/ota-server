@@ -49,7 +49,7 @@ A new firmware version must provide 3 files:
 
 Use the otaclient tool to publish new files:
 
-    $ python client/otaclient.py --publish-id <publish_id> --files <file1> <file2>
+    $ python client/otaclient.py --publish-id <publish_id> --publish <file1> <file2>
 
 Use the otaclient tool to publish the manifest corresponding to these files:
 

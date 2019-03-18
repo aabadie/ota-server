@@ -5,7 +5,7 @@ import asyncio
 import logging
 import aiocoap.resource as resource
 
-from aiocoap import Context, Message, CONTENT, NOT_FOUND, PUT
+from aiocoap import Context, Message, CONTENT, NOT_FOUND, POST
 
 logger = logging.getLogger("otaserver")
 
@@ -60,8 +60,8 @@ class CoapServer():
 
     def add_resources(self, store_path):
         """Add new resources for the given timestamp."""
-        for resource in ('manifest', 'slot0', 'slot1'):
-            self.add_resource(store_path, resource)
+        for file in os.listdir(os.path.join(self.upload_path, store_path)):
+            self.add_resource(store_path, file)
 
     def add_resource(self, store_path, resource):
         _resource_url = [store_path, resource,]
@@ -70,7 +70,7 @@ class CoapServer():
                                     FileResource(self, _resource_file))
 
 
-async def coap_notify(url, method=PUT, payload=b''):
+async def coap_notify(url, method=POST, payload=b''):
     """Send a CoAP request containing an update notification."""
     protocol = await Context.create_client_context(loop=None)
     request = Message(code=method, payload=payload)
