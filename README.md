@@ -30,6 +30,8 @@ Starting the server is as simple as:
 Notes:
 
 - Use `--debug` option if you want more output from the application.
+- Use `--coap-host` option to specify the CoAP server IP that will be used by
+  the devices to fetch the files (`::1` is the default)
 - Use `--coap-port` option to use another port for the CoAP server (5683 is the
   default)
 - Use `--http-port` option to use another port for the HTTP server listening
@@ -51,15 +53,15 @@ A new firmware version must provide 3 files:
 Use the provided python client to publish and notify updates:
 - publish new files:
 
-    $ python client/otaclient.py --publish-id <publish_id> --publish <file1> <file2>
+      $ python client/otaclient.py --publish-id <publish_id> --publish <file1> <file2>
 
 - publish the manifest corresponding to these files:
 
-    $ python client/otaclient.py --publish-id <publish_id> --manifest <manifest.bin>
+      $ python client/otaclient.py --publish-id <publish_id> --manifest <manifest.bin>
 
 - notify an update to a list of device:
 
-    $ python client/otaclient.py --publish-id <publish_id> --notify <device-ip>/url <other-device-ip>/url2
+      $ python client/otaclient.py --publish-id <publish_id> --notify <device-ip>/url <other-device-ip>/url2
 
 - combine the previous commands to perform all 3 actions in one call.
 
@@ -67,16 +69,16 @@ All 3 previous actions can also be done using the `curl` command line tool:
 
 - publish new files:
 
-    $ curl -X POST -F 'publish_id=<publish-id>' -F 'file1=@<path to file 1>'
-        -F 'file2=@<path to file 2>' http://<server address>:8080/publish
+      $ curl -X POST -F 'publish_id=<publish-id>' -F 'file1=@<path to file 1>'
+          -F 'file2=@<path to file 2>' http://<server address>:8080/publish
 
 - publish a manifest:
 
-    $ curl -X POST -F 'publish_id=<publish-id>' -F 'manifest=@<path to manifest file>' http://<server address>:8080/publish
+      $ curl -X POST -F 'publish_id=<publish-id>' -F 'manifest=@<path to manifest file>' http://<server address>:8080/publish
 
 - notify an update to a list of device:
 
-    $ curl -X POST -F 'publish_id=<publish-id>' -F 'urls=<device-ip/>url,<other-device-ip/>url2' http://<server-address>:8080/notify
+      $ curl -X POST -F 'publish_id=<publish-id>' -F 'urls=<device-ip/>url,<other-device-ip/>url2' http://<server-address>:8080/notify
 
 #### Fetch the available manifest and firmware slots:
 
