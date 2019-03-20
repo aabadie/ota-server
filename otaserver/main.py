@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger("otaserver")
 
 STATIC_PATH = os.path.join(os.path.dirname(__file__), "static")
-UPLOAD_PATH = os.path.join(STATIC_PATH, "firmwares")
+UPLOAD_PATH = os.path.join(os.path.dirname(__file__), "firmwares")
 
 def parse_command_line():
     """Parse command line arguments for IoT broker application."""
