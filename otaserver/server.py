@@ -11,7 +11,9 @@ import tornado.platform.asyncio
 from tornado.options import options
 from tornado import web
 
-from coap import CoapServer, coap_notify, COAP_METHOD
+from aiocoap import GET
+
+from coap import CoapServer, coap_request, COAP_METHOD
 
 logger = logging.getLogger("otaserver")
 
@@ -36,31 +38,40 @@ class OTAServerMainHandler(web.RequestHandler):
 class OTAServerNotifyHandler(tornado.web.RequestHandler):
     """Handler for notifying an update to a list of devices."""
 
-    def post(self):
+    async def post(self):
         """Handle notification of an available update."""
         publish_id = self.request.body_arguments['publish_id'][0].decode()
         publish_path = _path_from_publish_id(publish_id)
 
-        manifest_url = os.path.join(publish_path, 'manifest')
-        manifest_store_path = os.path.join(self.application.upload_path,
-                                           manifest_url)
-        if not os.path.isfile(manifest_store_path):
-            msg = ("Manifest is not available for publish id {}."
-                   .format(publish_id))
-            self.set_status(400, msg)
-            self.finish(msg)
-            return
+        _store_path = os.path.join(self.application.upload_path, publish_id)
+        base_filename = os.listdir(_store_path)[0].split('-')[0]
+
+        slot0_manifest_url = os.path.join(
+            publish_path,
+            '{}-slot0.riot.suit.latest.bin'.format(base_filename))
+        slot1_manifest_url = os.path.join(
+            publish_path,
+            '{}-slot1.riot.suit.latest.bin'.format(base_filename))
 
         devices_urls = self.request.body_arguments['urls'][0].decode()
         logger.debug('Notifying devices %s of an update of %s',
                      devices_urls, publish_id)
 
-        payload = '{}://[{}]:{}/{}'.format(
-            COAP_METHOD, options.coap_host, options.coap_port, manifest_url)
-        logger.debug('Manifest url is %s', payload)
         for url in devices_urls.split(','):
+            logger.debug('Notifying an update to %s', url)
+            inactive_url = '{}/suit/slot/inactive'.format(url)
+            _, payload = await coap_request(inactive_url, method=GET)
+            if int(payload) == 1:
+                manifest_url = slot1_manifest_url
+            else:
+                manifest_url = slot0_manifest_url
+            payload = '{}://[{}]:{}/{}'.format(COAP_METHOD, options.coap_host,
+                                               options.coap_port, manifest_url)
+            logger.debug('Manifest url is %s', payload)
+            notify_url = '{}/suit/trigger'.format(url)
             logger.debug('Send update notification at %s', url)
-            asyncio.ensure_future(coap_notify(url, payload=payload.encode()))
+            asyncio.ensure_future(coap_request(notify_url,
+                                               payload=payload.encode()))
 
 
 class OTAServerPublishHandler(tornado.web.RequestHandler):
@@ -74,6 +85,14 @@ class OTAServerPublishHandler(tornado.web.RequestHandler):
         # Store each data in separate files
         for name, content in data.items():
             _path = os.path.join(_store_path, name)
+            logger.debug('Storing file %s', _path)
+            with open(_path, 'wb') as f:
+                f.write(content)
+            # Hack to determine if the file is a manifest and copy as latest
+            _path_split = _path.split('.')
+            if 'suit' == _path_split[-3]:
+                _path_split[-2] = 'latest'
+            _path = '.'.join(_path_split)
             with open(_path, 'wb') as f:
                 f.write(content)
 
@@ -92,7 +111,8 @@ class OTAServerPublishHandler(tornado.web.RequestHandler):
         # Load the content of the files from the request
         update_data = {}
         for file in files:
-            update_data[os.path.basename(file)] = files[file][0]['body']
+            filename = os.path.basename(file)
+            update_data[filename] = files[file][0]['body']
 
         # Get publish identifier
         publish_id = self.request.body_arguments['publish_id'][0].decode()
@@ -103,9 +123,6 @@ class OTAServerPublishHandler(tornado.web.RequestHandler):
         # Store the data and create the corresponding CoAP resources
         self._store(store_path, update_data)
         self.application.coap_server.add_resources(store_path)
-
-        # logger.debug("Redirect to main page")
-        # self.redirect("/")
 
 
 class OTAServerApplication(web.Application):

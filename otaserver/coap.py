@@ -70,7 +70,7 @@ class CoapServer():
                                     FileResource(self, _resource_file))
 
 
-async def coap_notify(url, method=POST, payload=b''):
+async def coap_request(url, method=POST, payload=b''):
     """Send a CoAP request containing an update notification."""
     protocol = await Context.create_client_context(loop=None)
     request = Message(code=method, payload=payload)

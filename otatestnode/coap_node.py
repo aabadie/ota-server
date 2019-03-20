@@ -32,7 +32,7 @@ FIRMWARE_PATH = os.path.join(os.path.dirname(__file__), "firmwares")
 COAP_PORT = args.port
 
 
-async def _get_firmware(url, method=GET, payload=b''):
+async def _get_file(url, method=GET, payload=b''):
     protocol = await Context.create_client_context(loop=None)
     request = Message(code=method, payload=payload)
     request.set_request_uri(url)
@@ -43,7 +43,7 @@ async def _get_firmware(url, method=GET, payload=b''):
         payload = '{}'.format(e)
     else:
         code = response.code
-        payload = response.payload.decode('utf-8')
+        payload = response.payload
     finally:
         await protocol.shutdown()
 
@@ -51,30 +51,32 @@ async def _get_firmware(url, method=GET, payload=b''):
     return code, payload
 
 
-class NotifyResource(resource.Resource):
+class TriggerResource(resource.Resource):
     """Test node firmware notify resource."""
 
     def __init__(self):
-        super(NotifyResource, self).__init__()
-
-    def _store_firmware(self, filename, firmware):
-        _store_path = FIRMWARE_PATH
-        if not os.path.exists(_store_path):
-            os.makedirs(_store_path)
-        _firmware_file_path = os.path.join(_store_path, filename)
-
-        with open(_firmware_file_path, 'wb') as f:
-            f.write(firmware.encode('utf-8'))
-
-    async def _get_new_firmwares(self, update_path):
-        LOGGER.debug('Fetching firmware update at %s', update_path.decode())
-        _, manifest = await _get_firmware(update_path.decode('utf-8'))
-        self._store_firmware('manifest', manifest)
+        super(TriggerResource, self).__init__()
 
     async def render_post(self, request):
         LOGGER.debug('Update available at {}'.format(request.payload.decode()))
-        await self._get_new_firmwares(request.payload)
+        LOGGER.debug('Fetching manifest')
+        await _get_file(request.payload.decode())
         return aiocoap.Message(code=CHANGED, payload=request.payload)
+
+
+class InactiveResource(resource.Resource):
+    """Test node firmware inactive slot resource."""
+
+    def __init__(self):
+        super(InactiveResource, self).__init__()
+        self.inactive = 0
+
+    async def render_get(self, request):
+        LOGGER.debug('Received request on inactive resource')
+        self.inactive += 1
+        self.inactive %= 2
+        return aiocoap.Message(code=CHANGED,
+                               payload='{}'.format(self.inactive).encode())
 
 
 class CoapServer():
@@ -83,7 +85,10 @@ class CoapServer():
     def __init__(self, port=COAP_PORT):
         self.port = port
         self.root_coap = resource.Site()
-        self.root_coap.add_resource((args.resource, ), NotifyResource())
+        self.root_coap.add_resource(('suit', 'trigger', ),
+                                    TriggerResource())
+        self.root_coap.add_resource(('suit', 'slot', 'inactive', ),
+                                    InactiveResource())
         asyncio.ensure_future(
             Context.create_server_context(self.root_coap,
                                           bind=('::', self.port)))
