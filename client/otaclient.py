@@ -12,9 +12,7 @@ def parse_args():
                         help="OTA server port.")
     parser.add_argument('--publish-id', type=str,
                         help="published version identifier, should be unique")
-    parser.add_argument('--manifest', type=str, default=None,
-                        help="manifest file")
-    parser.add_argument('--publish', nargs='+',
+    parser.add_argument('--files', nargs='+',
                         help="list of files to publish")
     parser.add_argument('--notify', nargs='+',
                         help="list of device urls to use to notify an update")
@@ -23,19 +21,11 @@ def parse_args():
 
 def publish_files(args):
     files_dict = dict()
-    for file in args.publish:
+    for file in args.files:
         files_dict[file] = open(file, 'rb').read()
     response = requests.post(
         'http://{}:{}/publish'.format(args.ota_host, args.ota_port),
         files=files_dict, data=dict(publish_id=args.publish_id))
-    print('{}: {}'.format(response.status_code, response.reason))
-
-
-def publish_manifest(args):
-    response = requests.post(
-        'http://{}:{}/publish'.format(args.ota_host, args.ota_port),
-        files=dict(manifest=open(args.manifest, 'rb').read()),
-        data=dict(publish_id=args.publish_id))
     print('{}: {}'.format(response.status_code, response.reason))
 
 
@@ -48,10 +38,8 @@ def notify(args):
 
 
 def main(args):
-    if args.publish is not None and len(args.publish) > 0:
+    if args.files is not None and len(args.files) > 0:
         publish_files(args)
-    if args.manifest is not None and os.path.isfile(args.manifest):
-        publish_manifest(args)
     if args.notify is not None and len(args.notify) > 0:
         notify(args)
 

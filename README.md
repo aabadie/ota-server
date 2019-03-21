@@ -53,11 +53,7 @@ A new firmware version must provide 3 files:
 Use the provided python client to publish and notify updates:
 - publish new files:
 
-      $ python client/otaclient.py --publish-id <publish_id> --publish <file1> <file2>
-
-- publish the manifest corresponding to these files:
-
-      $ python client/otaclient.py --publish-id <publish_id> --manifest <manifest.bin>
+      $ python client/otaclient.py --publish-id <publish_id> --files <file1> <file2>
 
 - notify an update to a list of device:
 
@@ -71,10 +67,6 @@ All 3 previous actions can also be done using the `curl` command line tool:
 
       $ curl -X POST -F 'publish_id=<publish-id>' -F 'file1=@<path to file 1>'
           -F 'file2=@<path to file 2>' http://<server address>:8080/publish
-
-- publish a manifest:
-
-      $ curl -X POST -F 'publish_id=<publish-id>' -F 'manifest=@<path to manifest file>' http://<server address>:8080/publish
 
 - notify an update to a list of device:
 
