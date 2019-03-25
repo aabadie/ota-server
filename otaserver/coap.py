@@ -12,7 +12,7 @@ logger = logging.getLogger("otaserver")
 
 COAP_METHOD = 'coap'
 COAP_PORT = 5683
-COAP_HOST = '::1'
+COAP_HOST = '[::1]'
 
 
 def _remote_address(request):

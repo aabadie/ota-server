@@ -35,6 +35,17 @@ class OTAServerMainHandler(web.RequestHandler):
                     firmwares=self.application.firmwares)
 
 
+class OTAServerCoapUrlHandler(web.RequestHandler):
+    """Web application handler for getting the CoAP url."""
+
+    async def get(self):
+        _coap_uri = 'coap://{}:{}'.format(options.coap_host, options.coap_port)
+        _publish_id = self.request.path.split('/')[-1]
+        _coap_url = '{}/{}'.format(_coap_uri, _publish_id)
+        logger.debug("Sending CoAP server url: %s", _coap_url)
+        self.write(_coap_url)
+
+
 class OTAServerNotifyHandler(tornado.web.RequestHandler):
     """Handler for notifying an update to a list of devices."""
 
@@ -96,7 +107,7 @@ class OTAServerPublishHandler(tornado.web.RequestHandler):
             with open(_path, 'wb') as f:
                 f.write(content)
 
-    def post(self):
+    async def post(self):
         """Handle publication of an update."""
         # Verify the request contains the required files
         files = self.request.files
@@ -118,7 +129,7 @@ class OTAServerPublishHandler(tornado.web.RequestHandler):
         publish_id = self.request.body_arguments['publish_id'][0].decode()
         # Cleanup the path
         store_path = _path_from_publish_id(publish_id)
-        logger.debug('Storing %s update in %s', publish_id, store_path)
+        logger.debug('Storing %s update', publish_id)
 
         # Store the data and create the corresponding CoAP resources
         self._store(store_path, update_data)
@@ -136,6 +147,7 @@ class OTAServerApplication(web.Application):
             (r"/", OTAServerMainHandler),
             (r"/publish", OTAServerPublishHandler),
             (r"/notify", OTAServerNotifyHandler),
+            (r"/coap/url/.*", OTAServerCoapUrlHandler),
         ]
 
         self.upload_path = options.upload_path
