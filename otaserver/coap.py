@@ -3,6 +3,8 @@
 import os
 import asyncio
 import logging
+import mimetypes
+import aiocoap
 import aiocoap.resource as resource
 
 from aiocoap import Context, Message, CONTENT, NOT_FOUND, POST
@@ -31,6 +33,9 @@ class FileResource(resource.Resource):
         self._controller = controller
         self._file_path = file_path
 
+    async def needs_blockwise_assembly(self, request):
+        return False
+
     async def render_get(self, request):
         """Response to CoAP GET request."""
         remote = _remote_address(request)
@@ -39,8 +44,20 @@ class FileResource(resource.Resource):
             err_msg = "File {} not found on server".format(
                 self._file_path).encode()
             return Message(code=NOT_FOUND, payload=err_msg)
-        payload = open(self._file_path, 'rb').read()
-        return Message(code=CONTENT, payload=payload)
+
+        block_in = request.opt.block2 or \
+            aiocoap.optiontypes.BlockOption.BlockwiseTuple(0, 0, 6)
+        
+        with open(self._file_path, 'rb') as f:
+            f.seek(block_in.start)
+            data = f.read(block_in.size + 1)
+
+        block_out = aiocoap.optiontypes.BlockOption.BlockwiseTuple(
+            block_in.block_number,
+            len(data) > block_in.size,
+            block_in.size_exponent)
+
+        return aiocoap.Message(payload=data[:block_in.size], block2=block_out)
 
 
 class CoapServer():
@@ -72,11 +89,13 @@ class CoapServer():
 
 async def coap_request(url, method=POST, payload=b''):
     """Send a CoAP request containing an update notification."""
-    protocol = await Context.create_client_context(loop=None)
+    logger.debug('Sending a CoAP request to url: {}'.format(url))
+    context = await Context.create_client_context(loop=None)
     request = Message(code=method, payload=payload)
-    request.set_request_uri('{}://{}'.format(COAP_METHOD, url))
+    request_uri = '{}://{}'.format(COAP_METHOD, url)
+    request.set_request_uri(request_uri)
     try:
-        response = await protocol.request(request).response
+        response = await context.request(request).response
     except Exception as e:
         code = "Failed to fetch resource"
         payload = '{}'.format(e)
@@ -84,7 +103,7 @@ async def coap_request(url, method=POST, payload=b''):
         code = response.code
         payload = response.payload.decode('utf-8')
     finally:
-        await protocol.shutdown()
+        await context.shutdown()
 
     logger.debug('{}: {}'.format(code, payload))
     return code, payload

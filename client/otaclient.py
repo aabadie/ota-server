@@ -4,10 +4,9 @@ import requests
 
 def parse_args():
     parser = argparse.ArgumentParser(description="OTA publisher")
-    parser.add_argument('--ota-host', type=str, default="localhost",
-                        help="OTA server host.")
-    parser.add_argument('--ota-port', type=int, default=8080,
-                        help="OTA server port.")
+    parser.add_argument('--ota-host-url', type=str,
+                        default="http://localhost:8080",
+                        help="OTA server host url.")
     parser.add_argument('--publish-id', type=str,
                         help="published version identifier, should be unique")
     parser.add_argument('--files', nargs='+',
@@ -21,17 +20,16 @@ def publish_files(args):
     files_dict = dict()
     for file in args.files:
         files_dict[file] = open(file, 'rb').read()
-    response = requests.post(
-        'http://{}:{}/publish'.format(args.ota_host, args.ota_port),
-        files=files_dict, data=dict(publish_id=args.publish_id))
+    response = requests.post('{}/publish'.format(args.ota_host_url),
+                             files=files_dict,
+                             data=dict(publish_id=args.publish_id))
     print('{}: {}'.format(response.status_code, response.reason))
 
 
 def notify(args):
-    response = requests.post(
-        'http://{}:{}/notify'.format(args.ota_host, args.ota_port),
-        data=dict(publish_id=args.publish_id,
-                  urls=','.join(args.notify)))
+    response = requests.post('{}/notify'.format(args.ota_host_url),
+                             data=dict(publish_id=args.publish_id,
+                                       urls=','.join(args.notify)))
     print('{}: {}'.format(response.status_code, response.reason))
 
 

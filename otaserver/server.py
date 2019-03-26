@@ -71,13 +71,14 @@ class OTAServerNotifyHandler(tornado.web.RequestHandler):
         for url in devices_urls.split(','):
             logger.debug('Notifying an update to %s', url)
             inactive_url = '{}/suit/slot/inactive'.format(url)
-            _, payload = await coap_request(inactive_url, method=GET)
+            _, payload = await coap_request(inactive_url,
+                                            method=GET)
             if int(payload) == 1:
                 manifest_url = slot1_manifest_url
             else:
                 manifest_url = slot0_manifest_url
-            payload = '{}://[{}]:{}/{}'.format(COAP_METHOD, options.coap_host,
-                                               options.coap_port, manifest_url)
+            payload = '{}://{}:{}/{}'.format(COAP_METHOD, options.coap_host,
+                                             options.coap_port, manifest_url)
             logger.debug('Manifest url is %s', payload)
             notify_url = '{}/suit/trigger'.format(url)
             logger.debug('Send update notification at %s', url)
