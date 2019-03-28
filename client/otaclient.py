@@ -13,6 +13,9 @@ def parse_args():
                         help="list of files to publish")
     parser.add_argument('--notify', nargs='+',
                         help="list of device urls to use to notify an update")
+    parser.add_argument('--notifyv4', nargs='+',
+                        help="list of device urls to use to notify a "
+                             "suit v4 update")
     return parser.parse_args()
 
 
@@ -33,11 +36,20 @@ def notify(args):
     print('{}: {}'.format(response.status_code, response.reason))
 
 
+def notifyv4(args):
+    response = requests.post('{}/notifyv4'.format(args.ota_host_url),
+                             data=dict(publish_id=args.publish_id,
+                                       urls=','.join(args.notifyv4)))
+    print('{}: {}'.format(response.status_code, response.reason))
+
+
 def main(args):
     if args.files is not None and len(args.files) > 0:
         publish_files(args)
     if args.notify is not None and len(args.notify) > 0:
         notify(args)
+    if args.notifyv4 is not None and len(args.notifyv4) > 0:
+        notifyv4(args)
 
 
 if __name__ == '__main__':

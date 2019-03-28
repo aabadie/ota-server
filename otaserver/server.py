@@ -85,6 +85,38 @@ class OTAServerNotifyHandler(tornado.web.RequestHandler):
             await coap_request(notify_url, payload=payload.encode())
 
 
+class OTAServerNotifyv4Handler(tornado.web.RequestHandler):
+    """Handler for notifying an update to a list of devices."""
+
+    async def post(self):
+        """Handle notification of an available update."""
+        publish_id = self.request.body_arguments['publish_id'][0].decode()
+        publish_path = _path_from_publish_id(publish_id)
+
+        _store_path = os.path.join(self.application.upload_path, publish_id)
+        base_filename = os.listdir(_store_path)[0].split('-')[0]
+
+        manifest_url = os.path.join(
+            publish_path,
+            '{}-riot.suitv4.latest.bin'.format(base_filename))
+
+        devices_urls = self.request.body_arguments['urls'][0].decode()
+        logger.debug('Notifying devices %s of an update of %s',
+                     devices_urls, publish_id)
+
+        for url in devices_urls.split(','):
+            logger.debug('Notifying an update to %s', url)
+            inactive_url = '{}/suit/slot/inactive'.format(url)
+            _, payload = await coap_request(inactive_url,
+                                            method=GET)
+            payload = '{}://{}:{}/{}'.format(COAP_METHOD, options.coap_host,
+                                             options.coap_port, manifest_url)
+            logger.debug('Manifest url is %s', payload)
+            notify_url = '{}/suit/trigger'.format(url)
+            logger.debug('Send update notification at %s', url)
+            await coap_request(notify_url, payload=payload.encode())
+
+
 class OTAServerPublishHandler(tornado.web.RequestHandler):
     """Handler for storing published firmwares."""
 
@@ -148,6 +180,7 @@ class OTAServerApplication(web.Application):
             (r"/", OTAServerMainHandler),
             (r"/publish", OTAServerPublishHandler),
             (r"/notify", OTAServerNotifyHandler),
+            (r"/notifyv4", OTAServerNotifyv4Handler),
             (r"/coap/url/.*", OTAServerCoapUrlHandler),
         ]
 
