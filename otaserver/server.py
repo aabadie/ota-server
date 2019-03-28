@@ -133,7 +133,7 @@ class OTAServerPublishHandler(tornado.web.RequestHandler):
                 f.write(content)
             # Hack to determine if the file is a manifest and copy as latest
             _path_split = _path.split('.')
-            if 'suit' == _path_split[-3]:
+            if 'suit' == _path_split[-3] or 'suitv4' == _path_split[-3]:
                 _path_split[-2] = 'latest'
             _path = '.'.join(_path_split)
             with open(_path, 'wb') as f:
