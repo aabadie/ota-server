@@ -82,8 +82,7 @@ class OTAServerNotifyHandler(tornado.web.RequestHandler):
             logger.debug('Manifest url is %s', payload)
             notify_url = '{}/suit/trigger'.format(url)
             logger.debug('Send update notification at %s', url)
-            asyncio.ensure_future(coap_request(notify_url,
-                                               payload=payload.encode()))
+            await coap_request(notify_url, payload=payload.encode())
 
 
 class OTAServerPublishHandler(tornado.web.RequestHandler):
