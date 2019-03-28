@@ -133,7 +133,7 @@ class OTAServerPublishHandler(tornado.web.RequestHandler):
 
         # Store the data and create the corresponding CoAP resources
         self._store(store_path, update_data)
-        # self.application.coap_server.add_resources(store_path)
+        self.application.coap_server.add_resources(store_path)
 
 
 class OTAServerApplication(web.Application):
@@ -157,7 +157,7 @@ class OTAServerApplication(web.Application):
                         static_path=options.static_path,
                         template_path=options.static_path,)
 
-        # self.coap_server = CoapServer(self.upload_path, port=options.coap_port)
+        self.coap_server = CoapServer(self.upload_path, port=options.coap_port)
 
         super().__init__(handlers, **settings)
         logger.info('Application started, listening on port {}'
