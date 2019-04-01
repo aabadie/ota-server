@@ -10,64 +10,149 @@
 
     <title>{{ title }}</title>
 
-    <!-- Material Design fonts -->
-    <link rel="stylesheet" type="text/css"
-          href="//fonts.googleapis.com/css?family=Roboto:300,400,500,700">
-    <link rel="stylesheet" type="text/css"
-          href="//fonts.googleapis.com/icon?family=Material+Icons">
-
     <!-- Bootstrap -->
-    <link rel="stylesheet" type="text/css"
-          href="{{ static_url('node_modules/bootstrap/dist/css/bootstrap.min.css') }}">
-    <!-- FontAwesome -->
-    <link rel="stylesheet" type="text/css"
-          href="{{ static_url('node_modules/font-awesome/css/font-awesome.min.css') }}">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+          crossorigin="anonymous">
 
-    <!-- Bootstrap Material Design -->
-    <link rel="stylesheet" type="text/css"
-          href="{{ static_url('node_modules/bootstrap-material-design/dist/css/bootstrap-material-design.min.css') }}">
-    <link rel="stylesheet" type="text/css"
-          href="{{ static_url('node_modules/bootstrap-material-design/dist/css/ripples.min.css') }}">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
     <!-- Javascript modules -->
-    <script type="text/javascript"
-            src="{{ static_url('node_modules/jquery/dist/jquery.min.js') }}"></script>
-    <script type="text/javascript"
-            src="{{ static_url('node_modules/bootstrap/dist/js/bootstrap.min.js') }}"></script>
-    <script type="text/javascript"
-            src="{{ static_url('node_modules/bootstrap-material-design/dist/js/material.min.js') }}"></script>
-    <script type="text/javascript"
-            src="{{ static_url('node_modules/bootstrap-material-design/dist/js/ripples.min.js') }}"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+            integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+            integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+            crossorigin="anonymous"></script>
 
-    <!-- Pyaiot dashboard css -->
-    <link rel="stylesheet" type="text/css" href="{{ static_url('css/otaserver.css') }}">
+    <!-- Axios -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 </head>
 
-<body style="background-color: #333;">
-    <div class="container-fluid">
-        <div class="firmware-container">
-            <form enctype="multipart/form-data" action="/upload" method="post">
-                <label class="btn btn-primary" for="slot1">Choose firmware (slot 1) </label>
-                <input type="file" name="slot1" id="slot1">
-                <label class="btn btn-primary" for="slot2">Choose firmware (slot 2) </label>
-                <input type="file" name="slot2" id="slot2">
-                </label>
-                <button type="submit" class="btn btn-primary">Upload</button>
-            </form>
+<body>
+<script>
+function notify(id) {
+    let deviceAddr = $("#"+id+"addrval").val()
+    if (deviceAddr === '') {
+        console.log('Device address is empty')
+        return
+    }
+
+    console.log(`Notifying update '${id}' to ${deviceAddr}`)
+    var bodyFormData = new FormData();
+    bodyFormData.set('publish_id', id);
+    bodyFormData.set('urls', deviceAddr);
+    axios({
+        method: 'post',
+        url: 'http://{{ host }}:{{ port }}/notifyv4',
+        data: bodyFormData,
+        config: { headers: {'Content-Type': 'multipart/form-data' }}
+    }).then(function (res) {
+        console.log(res.status)
+    }).catch(function (err) {
+        console.log(err.message)
+    });
+}
+
+function remove_version(version, id) {
+    console.log(`Removing version '${version}' from '${id}'`)
+    axios.post('http://{{ host }}:{{ port }}/remove', {
+      'publish_id': id, 'version': version
+    }).then(function (res) {
+        console.log(res.status)
+        document.location.reload(true)
+    }).catch(function (err) {
+        console.log(err.message)
+    });
+}
+</script>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">RIOT SUIT updates</a>
+    </nav>
+    <div class="container" style="padding: 10px">
+    <div class="card">
+        <div class="card-header bg-secondary text-light">
+            Available applications
         </div>
-        <div class="firmware-container">
-            <h2>Available firmwares</h2>
-            <ul class="list-group">
-                {% for fw in firmwares %}
-                <li class="list-group-item">
-                    <i class="material-icons">description</i>
-                    {{fw.filename}} -
-                    {{fw.size}} -
-                    {{fw.upload_time}}
-                </li>
+        <div class="card-body">
+            <div id="accordion">
+                {% for application in applications %}
+                <div class="card">
+                    <div class="card-header" id={{ application['id'] }}>
+                        <button class="btn btn-link"
+                                data-toggle="collapse" data-target="#{{application['id']}}content"
+                                aria-expanded="false" aria-controls="{{application['id']}}content">
+                            <span class="text-dark font-weight-normal font-size-sm float-right">
+                                <span class="badge badge-info">{{application['count']}}</span>
+                                <i class="fa fa-server"></i> <strong>{{application['name']}}</strong> -
+                                <i class="fa fa-microchip"></i> {{application['board']}}
+                            </span>
+                        </button>
+                        <span class="float-right">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="{{application['id']}}addr">Device address</span>
+                            </div>
+                            <input id="{{application['id']}}addrval" type="text" class="form-control" placeholder="Enter device IPv6 address" aria-label="{{application['id']}}addrval" aria-describedby="{{application['id']}}addr">
+                            <div class="input-group-append">
+                                <button class="btn btn-link float-right" data-toggle="tooltip" title="Notify"
+                                        onclick=notify("{{ application['id'] }}");>
+                                    <i class="fa fa-bell"></i>
+                                </button>
+                            </div>
+                        </div>
+                        </span>
+                    </div>
+                    <div id="{{application['id']}}content" class="collapse"
+                            aria-labelledby={{application['id']}} data-parent="#accordion">
+                        <div class="card-body" style="padding:0px">
+                            <table class="table table-striped table-sm">
+                                <thead class="table-info">
+                                    <tr>
+                                        <th scope="col">Version</th>
+                                        <th scope="col">Files</th>
+                                        <th scope="col" class="float-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for version in application['versions'].keys() %}
+                                    <tr>
+                                        <td>{{ version }}</td>
+                                        <td>
+                                            <div>
+                                            <button type="button" class="btn btn-link pr-0 pl-0" data-toggle="tooltip" title={{ application['versions'][version]['manifest'] }}>
+                                                <span class="badge badge-pill badge-info">Manifest</span>
+                                            </button>
+                                            <button type="button" class="btn btn-link pr-0 pl-0" data-toggle="tooltip" title={{ application['versions'][version]['slot0'] }}>
+                                                <span class="badge badge-pill badge-info">Slot0</span>
+                                            </button>
+                                            <button type="button" class="btn btn-link pr-0 pl-0" data-toggle="tooltip" title={{ application['versions'][version]['slot1'] }}>
+                                                <span class="badge badge-pill badge-info">Slot1</span>
+                                            </button>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <button class="btn mx-auto float-right" data-toggle="tooltip" title="Remove"
+                                                    onclick=remove_version({{ version }},"{{ application['id'] }}");>
+                                                <i class="fa fa-times"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% end %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div> <!-- accordion card -->
                 {% end %}
-            </ul>
+            </div> <!-- accordion -->
         </div>
-    </div>
+    </div> <!-- card -->
+    </div> <!-- container -->
 </body>
 </html>
+
