@@ -6,6 +6,9 @@ import logging
 import json
 import datetime
 import asyncio
+
+from collections import defaultdict
+
 import tornado
 import tornado.platform.asyncio
 from tornado.options import options
@@ -23,16 +26,71 @@ def _path_from_publish_id(publish_id):
     return _path
 
 
+def _get_versions_from_path(path):
+    files = os.listdir(path)
+    versions = defaultdict(dict)
+    for file in files:
+        version = file.split('.')[-2]
+        if version == 'latest':
+            continue
+        if version == 'riot':
+            version = file.split('.')[-3]
+        if 'riot.suit' in file:
+            versions[version]['manifest'] = file
+        if 'slot0' in file:
+            versions[version]['slot0'] = file
+        if 'slot1' in file:
+            versions[version]['slot1'] = file
+    return versions
+
+
+def _get_applications(path):
+    applications = []
+    for d in os.listdir(path):
+        board, name = d.split('_', 1)
+        applications.append(
+            { 'id': d,
+              'name': name,
+              'board': board,
+              'count':int((len(os.listdir(os.path.join(path, d))) - 1) / 3),
+              'versions': _get_versions_from_path(os.path.join(path, d))
+            })
+    return applications
+
+
 class OTAServerMainHandler(web.RequestHandler):
     """Web application handler for web page."""
 
     def get(self):
-        logging.debug("Handling get request received.")
-
+        logger.debug("Rendering SUIT updates web page")
+        applications = _get_applications(options.upload_path)
         self.render("otaserver.html",
                     favicon=os.path.join("assets", "favicon.ico"),
-                    title="OTA Server application",
-                    firmwares=self.application.firmwares)
+                    title="SUIT Update Server",
+                    applications=applications,
+                    host=options.http_host,
+                    port=options.http_port)
+
+
+class OTAServerRemoveHandler(tornado.web.RequestHandler):
+    """Handler for removing an existing version."""
+
+    async def post(self):
+        """Handle request for removing an existing version."""
+        request = json.loads(self.request.body.decode())
+        logger.debug("Removing version %s in application %s",
+                     request['version'], request['publish_id'])
+        for publish_id in os.listdir(options.upload_path):
+            if publish_id == request['publish_id']:
+                for filename in os.listdir(
+                        os.path.join(options.upload_path, publish_id)):
+                    if str(request['version']) not in filename:
+                        continue
+                    logger.debug("Removing file %s", filename)
+                    file = os.path.join(
+                        options.upload_path, publish_id, filename)
+                    if os.path.exists(file):
+                        os.remove(file)
 
 
 class OTAServerCoapUrlHandler(web.RequestHandler):
@@ -179,18 +237,17 @@ class OTAServerApplication(web.Application):
         handlers = [
             (r"/", OTAServerMainHandler),
             (r"/publish", OTAServerPublishHandler),
+            (r"/remove", OTAServerRemoveHandler),
             (r"/notify", OTAServerNotifyHandler),
             (r"/notifyv4", OTAServerNotifyv4Handler),
             (r"/coap/url/.*", OTAServerCoapUrlHandler),
         ]
 
-        self.upload_path = options.upload_path
-        self.firmwares = os.listdir(self.upload_path)
-
         settings = dict(debug=True,
                         static_path=options.static_path,
                         template_path=options.static_path,)
 
+        self.upload_path = options.upload_path
         if options.with_coap_server:
             self.coap_server = CoapServer(self.upload_path,
                                           port=options.coap_port)
