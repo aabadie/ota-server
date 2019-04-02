@@ -99,9 +99,9 @@ function remove_version(version, id) {
                             </div>
                             <input id="{{application['id']}}addrval" type="text" class="form-control" placeholder="Enter device IPv6 address" aria-label="{{application['id']}}addrval" aria-describedby="{{application['id']}}addr">
                             <div class="input-group-append">
-                                <button class="btn btn-link float-right" data-toggle="tooltip" title="Notify"
+                                <button class="btn btn-primary float-right" data-toggle="tooltip" title="Notify"
                                         onclick=notify("{{ application['id'] }}");>
-                                    <i class="fa fa-bell"></i>
+                                    <i class="fa fa-bell"></i>&nbsp;Notify
                                 </button>
                             </div>
                         </div>
@@ -115,7 +115,7 @@ function remove_version(version, id) {
                                     <tr>
                                         <th scope="col">Version</th>
                                         <th scope="col">Files</th>
-                                        <th scope="col" class="float-right">Actions</th>
+                                        <th scope="col" class="float-right"><span style="margin-right:15px">Actions</span></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -136,9 +136,9 @@ function remove_version(version, id) {
                                             </div>
                                         </td>
                                         <td>
-                                            <button class="btn mx-auto float-right" data-toggle="tooltip" title="Remove"
+                                            <button class="btn btn-danger mx-auto float-right" data-toggle="tooltip" title="Remove"
                                                     onclick=remove_version({{ version }},"{{ application['id'] }}");>
-                                                <i class="fa fa-times"></i>
+                                                <i class="fa fa-times"></i>&nbsp;Delete
                                             </button>
                                         </td>
                                     </tr>
