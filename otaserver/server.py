@@ -156,7 +156,7 @@ class OTAServerNotifyv4Handler(tornado.web.RequestHandler):
 
         manifest_url = os.path.join(
             publish_path,
-            '{}-riot.suitv4.latest.bin'.format(base_filename))
+            '{}-riot.suitv4_signed.latest.bin'.format(base_filename))
 
         devices_urls = self.request.body_arguments['urls'][0].decode()
         logger.debug('Notifying devices %s of an update of %s',
@@ -191,7 +191,7 @@ class OTAServerPublishHandler(tornado.web.RequestHandler):
                 f.write(content)
             # Hack to determine if the file is a manifest and copy as latest
             _path_split = _path.split('.')
-            if 'suit' == _path_split[-3] or 'suitv4' == _path_split[-3]:
+            if 'suit' == _path_split[-3] or 'suitv4_signed' == _path_split[-3]:
                 _path_split[-2] = 'latest'
             _path = '.'.join(_path_split)
             with open(_path, 'wb') as f:
