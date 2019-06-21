@@ -164,9 +164,6 @@ class OTAServerNotifyv4Handler(tornado.web.RequestHandler):
 
         for url in devices_urls.split(','):
             logger.debug('Notifying an update to %s', url)
-            inactive_url = '{}/suit/slot/inactive'.format(url)
-            _, payload = await coap_request(inactive_url,
-                                            method=GET)
             payload = '{}://{}:{}/{}'.format(COAP_METHOD, options.coap_host,
                                              options.coap_port, manifest_url)
             logger.debug('Manifest url is %s', payload)
