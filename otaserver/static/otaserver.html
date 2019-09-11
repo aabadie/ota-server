@@ -35,7 +35,7 @@
 
 <body>
 <script>
-function notify(id) {
+function notify(id, version) {
     let deviceAddr = $("#"+id+"addrval").val()
     if (deviceAddr === '') {
         console.log('Device address is empty')
@@ -46,6 +46,7 @@ function notify(id) {
     var bodyFormData = new FormData();
     bodyFormData.set('publish_id', id);
     bodyFormData.set('urls', deviceAddr);
+    bodyFormData.set('version', version);
     axios({
         method: 'post',
         url: 'http://{{ host }}:{{ port }}/notifyv4',
@@ -100,7 +101,7 @@ function remove_version(version, id) {
                             <input id="{{application['id']}}addrval" type="text" class="form-control" placeholder="Enter device IPv6 address" aria-label="{{application['id']}}addrval" aria-describedby="{{application['id']}}addr">
                             <div class="input-group-append">
                                 <button class="btn btn-primary float-right" data-toggle="tooltip" title="Notify"
-                                        onclick=notify("{{ application['id'] }}");>
+                                        onclick='notify("{{ application['id'] }}","latest")'>
                                     <i class="fa fa-bell"></i>&nbsp;Notify
                                 </button>
                             </div>
@@ -135,11 +136,21 @@ function remove_version(version, id) {
                                             </button>
                                             </div>
                                         </td>
-                                        <td>
-                                            <button class="btn btn-danger mx-auto float-right" data-toggle="tooltip" title="Remove"
-                                                    onclick=remove_version({{ version }},"{{ application['id'] }}");>
-                                                <i class="fa fa-times"></i>&nbsp;Delete
-                                            </button>
+                                        <td style="float: right;">
+                                            <div class="input-group float-right" >
+                                                <div class="input-group-prepend">
+                                                    <button class="btn btn-danger mx-auto float-right" data-toggle="tooltip" title="Remove"
+                                                            onclick=remove_version({{ version }},"{{ application['id'] }}");>
+                                                        <i class="fa fa-times"></i>&nbsp;Delete
+                                                    </button>
+                                                </div>
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-primary float-right" data-toggle="tooltip" title="Notify"
+                                                            onclick=notify("{{ application['id'] }}",{{ version }});>
+                                                        <i class="fa fa-bell"></i>&nbsp;Notify
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </td>
                                     </tr>
                                     {% end %}
