@@ -148,6 +148,7 @@ class OTAServerNotifyv4Handler(tornado.web.RequestHandler):
 
     async def post(self):
         """Handle notification of an available update."""
+        version = self.request.body_arguments['version'][0].decode()
         publish_id = self.request.body_arguments['publish_id'][0].decode()
         publish_path = _path_from_publish_id(publish_id)
 
@@ -156,7 +157,7 @@ class OTAServerNotifyv4Handler(tornado.web.RequestHandler):
 
         manifest_url = os.path.join(
             publish_path,
-            '{}-riot.suitv4_signed.latest.bin'.format(base_filename))
+            '{}-riot.suitv4_signed.{}.bin'.format(base_filename, version))
 
         devices_urls = self.request.body_arguments['urls'][0].decode()
         logger.debug('Notifying devices %s of an update of %s',
