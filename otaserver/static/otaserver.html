@@ -70,6 +70,20 @@ function remove_version(version, id) {
         console.log(err.message)
     });
 }
+
+function reset_device() {
+    uid = $("#"+"deviceToReset").val()
+    console.log(`Reseting device '${uid}'`)
+    axios.post('http://{{ host }}:8282/reset', {
+      'uid': uid
+    }).then(function (res) {
+        console.log(res.status)
+        document.location.reload(true)
+    }).catch(function (err) {
+        console.log(err.message)
+    });
+}
+
 </script>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand" href="#">RIOT SUIT updates</a>
@@ -163,6 +177,29 @@ function remove_version(version, id) {
             </div> <!-- accordion -->
         </div>
     </div> <!-- card -->
+    </div> <!-- container -->
+    <div class="container" style="padding: 10px">
+            <div class="card">
+                    <div class="card-header bg-secondary text-light">
+                            Demo Management
+                    </div>
+                        <div class="card-body"></div>
+                            <div class="card-header">
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Reset Device</span>
+                                    </div>
+                                    <input id="deviceToReset" type="text" class="form-control" placeholder="Enter device UID" aria-label="deviceToReset" aria-describedby="deviceToResetDescription">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-primary float-right" data-toggle="tooltip" title="Trigger Reset" onclick='reset_device()'>
+                                            <i class="fa fa-bell"></i>&nbsp;Reset
+                                        </button>
+                                    </div>
+                                </div>
+                                <small id="deviceToResetDescription" class="form-text text-muted">The specified Device will be reset to a startup firmware, older than all published firmwares</small>
+                            </div>
+                        </div>
+            </div>
     </div> <!-- container -->
 </body>
 </html>
