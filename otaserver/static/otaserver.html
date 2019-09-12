@@ -74,7 +74,7 @@ function remove_version(version, id) {
 function reset_device() {
     uid = $("#"+"deviceToReset").val()
     console.log(`Reseting device '${uid}'`)
-    axios.post('http://{{ host }}:8282/reset', {
+    axios.post('http://{{ demo_host }}:{{ demo_port }}/reset', {
       'uid': uid
     }).then(function (res) {
         console.log(res.status)

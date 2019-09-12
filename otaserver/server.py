@@ -69,7 +69,9 @@ class OTAServerMainHandler(web.RequestHandler):
                     title="SUIT Update Server",
                     applications=applications,
                     host=options.http_host,
-                    port=options.http_port)
+                    port=options.http_port,
+                    demo_host=options.demo_host,
+                    demo_port=options.demo_port)
 
 
 class OTAServerRemoveHandler(tornado.web.RequestHandler):
