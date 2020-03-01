@@ -38,6 +38,32 @@ Notes:
   to incoming user updates (8080 is the default)
 - Use `--help` to get the full list options
 
+#### Run with Docker
+
+The HTTP port and CoAP port have to be explictly exposed to the host when
+running the aabadie/ota-server container.
+Internally, the HTTP port is 8080 and is fixed. The CoAP is 5683/udp but it can
+be changed to a different value using the `COAP_PORT` environment variable.
+To set the CoAP host option of the ota-server, use the `COAP_HOST` environment
+variable.
+
+Example:
+Required setup:
+- CoAP host: fd00:dead:beef::1
+- CoAP port: 5684/udp
+- HTTP port: 8888
+
+Launch the OTA server:
+```
+docker run --rm -p 8888:8080 -p 5684:5684/udp --env COAP_HOST=[fd00:dead:beef::1] --env COAP_PORT=5684 aabadie/ota-server
+```
+
+You can verify that the web interface is available at http://localhost:8888
+You can also verify that the CoAP server can be reached using aiocoap:
+```
+aiocoap-client -m GET coap://[fd00:dead:beef::1]:5684/.well-known/core
+```
+
 #### Publish and notify a new version
 
 A new firmware version must provide 3 files:
