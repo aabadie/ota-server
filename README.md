@@ -55,7 +55,7 @@ Required setup:
 
 Launch the OTA server:
 ```
-docker run --rm -p 8888:8080 -p 5684:5684/udp --env COAP_HOST=[fd00:dead:beef::1] --env COAP_PORT=5684 aabadie/ota-server
+docker run --rm -ti -p 8888:8080 -p 5684:5684/udp --env COAP_HOST=[fd00:dead:beef::1] --env COAP_PORT=5684 aabadie/ota-server
 ```
 
 You can verify that the web interface is available at http://localhost:8888
