@@ -69,7 +69,8 @@ class OTAServerMainHandler(web.RequestHandler):
                     title="SUIT Update Server",
                     applications=applications,
                     host=options.http_host,
-                    port=options.http_port)
+                    port=options.http_port,
+                    root_url=options.root_url)
 
 
 class OTAServerRemoveHandler(tornado.web.RequestHandler):
@@ -240,6 +241,13 @@ class OTAServerApplication(web.Application):
             (r"/notifyv4", OTAServerNotifyv4Handler),
             (r"/coap/url/.*", OTAServerCoapUrlHandler),
         ]
+
+        if options.root_url:
+            for i, handler in enumerate(handlers):
+                handlers[i] = (
+                    handler[0].replace(
+                        '/', '/{}/'.format(options.root_url), 1),
+                    handler[1])
 
         settings = dict(debug=True,
                         static_path=options.static_path,

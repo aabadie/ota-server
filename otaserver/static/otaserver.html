@@ -47,9 +47,10 @@ function notify(id, version) {
     bodyFormData.set('publish_id', id);
     bodyFormData.set('urls', deviceAddr);
     bodyFormData.set('version', version);
+    var notify_path = '{{ root_url }}' === '' ? 'notifyv4' : '{{ root_url }}' + '/notifyv4' ;
     axios({
         method: 'post',
-        url: 'http://{{ host }}:{{ port }}/notifyv4',
+        url: 'http://{{ host }}:{{ port }}/' + notify_path,
         data: bodyFormData,
         config: { headers: {'Content-Type': 'multipart/form-data' }}
     }).then(function (res) {
@@ -61,8 +62,9 @@ function notify(id, version) {
 
 function remove_version(version, id) {
     console.log(`Removing version '${version}' from '${id}'`)
-    axios.post('http://{{ host }}:{{ port }}/remove', {
-      'publish_id': id, 'version': version
+    var remove_path = '{{ root_url }}' === '' ? 'remove' : '{{ root_url }}' + '/remove' ;
+    axios.post('http://{{ host }}:{{ port }}/' + remove_path, {
+        'publish_id': id, 'version': version
     }).then(function (res) {
         console.log(res.status)
         document.location.reload(true)

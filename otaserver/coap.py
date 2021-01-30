@@ -47,7 +47,7 @@ class FileResource(resource.Resource):
 
         block_in = request.opt.block2 or \
             aiocoap.optiontypes.BlockOption.BlockwiseTuple(0, 0, 6)
-        
+
         with open(self._file_path, 'rb') as f:
             f.seek(block_in.start)
             data = f.read(block_in.size + 1)
@@ -68,7 +68,7 @@ class CoapServer():
         self.port = port
         self.upload_path = upload_path
         self._bootstrap_resources()
-        asyncio.ensure_future(Context.create_server_context(self.root_coap,
+        asyncio.Task(Context.create_server_context(self.root_coap,
                               bind=('::', self.port)))
 
     def _bootstrap_resources(self):

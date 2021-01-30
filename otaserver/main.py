@@ -31,6 +31,7 @@ def parse_command_line():
     define("with_coap_server", default=True, help="Use own CoAP server.")
     define("coap_host", default=COAP_HOST, help="CoAP server host.")
     define("coap_port", default=COAP_PORT, help="CoAP server port.")
+    define("root_url", default="", help="Root Url to service Application.")
     define("debug", default=False, help="Enable debug mode.")
     options.parse_command_line()
 
