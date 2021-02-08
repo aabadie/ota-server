@@ -130,7 +130,7 @@ class OTAServerNotify(tornado.web.RequestHandler):
             payload = '{}://{}:{}/{}'.format(COAP_METHOD, options.coap_host,
                                              options.coap_port, manifest_url)
             logger.debug('Manifest url is %s', payload)
-            notify_url = '{}/suit/trigger'.format(url)
+            notify_url = '{}/{}'.format(url, options.notify_url)
             logger.debug('Send update notification at %s', url)
             await coap_request(notify_url, payload=payload.encode())
 
