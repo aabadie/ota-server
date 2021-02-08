@@ -47,7 +47,7 @@ function notify(id, version) {
     bodyFormData.set('publish_id', id);
     bodyFormData.set('urls', deviceAddr);
     bodyFormData.set('version', version);
-    var notify_path = '{{ root_url }}' === '' ? 'notifyv4' : '{{ root_url }}' + '/notifyv4' ;
+    var notify_path = '{{ root_url }}' === '' ? 'notify' : '{{ root_url }}' + '/notify' ;
     axios({
         method: 'post',
         url: 'http://{{ host }}:{{ port }}/' + notify_path,

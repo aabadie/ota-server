@@ -105,46 +105,7 @@ class OTAServerCoapUrlHandler(web.RequestHandler):
         self.write(_coap_url)
 
 
-class OTAServerNotifyHandler(tornado.web.RequestHandler):
-    """Handler for notifying an update to a list of devices."""
-
-    async def post(self):
-        """Handle notification of an available update."""
-        publish_id = self.request.body_arguments['publish_id'][0].decode()
-        publish_path = _path_from_publish_id(publish_id)
-
-        _store_path = os.path.join(self.application.upload_path, publish_id)
-        base_filename = os.listdir(_store_path)[0].split('-')[0]
-
-        slot0_manifest_url = os.path.join(
-            publish_path,
-            '{}-slot0.riot.suit.latest.bin'.format(base_filename))
-        slot1_manifest_url = os.path.join(
-            publish_path,
-            '{}-slot1.riot.suit.latest.bin'.format(base_filename))
-
-        devices_urls = self.request.body_arguments['urls'][0].decode()
-        logger.debug('Notifying devices %s of an update of %s',
-                     devices_urls, publish_id)
-
-        for url in devices_urls.split(','):
-            logger.debug('Notifying an update to %s', url)
-            inactive_url = '{}/suit/slot/inactive'.format(url)
-            _, payload = await coap_request(inactive_url,
-                                            method=GET)
-            if int(payload) == 1:
-                manifest_url = slot1_manifest_url
-            else:
-                manifest_url = slot0_manifest_url
-            payload = '{}://{}:{}/{}'.format(COAP_METHOD, options.coap_host,
-                                             options.coap_port, manifest_url)
-            logger.debug('Manifest url is %s', payload)
-            notify_url = '{}/suit/trigger'.format(url)
-            logger.debug('Send update notification at %s', url)
-            await coap_request(notify_url, payload=payload.encode())
-
-
-class OTAServerNotifyv4Handler(tornado.web.RequestHandler):
+class OTAServerNotify(tornado.web.RequestHandler):
     """Handler for notifying an update to a list of devices."""
 
     async def post(self):
@@ -158,7 +119,7 @@ class OTAServerNotifyv4Handler(tornado.web.RequestHandler):
 
         manifest_url = os.path.join(
             publish_path,
-            '{}-riot.suitv4_signed.{}.bin'.format(base_filename, version))
+            '{}-riot.suit_signed.{}.bin'.format(base_filename, version))
 
         devices_urls = self.request.body_arguments['urls'][0].decode()
         logger.debug('Notifying devices %s of an update of %s',
@@ -190,7 +151,7 @@ class OTAServerPublishHandler(tornado.web.RequestHandler):
                 f.write(content)
             # Hack to determine if the file is a manifest and copy as latest
             _path_split = _path.split('.')
-            if 'suit' == _path_split[-3] or 'suitv4_signed' == _path_split[-3]:
+            if 'suit' == _path_split[-3] or 'suit_signed' == _path_split[-3]:
                 _path_split[-2] = 'latest'
             _path = '.'.join(_path_split)
             with open(_path, 'wb') as f:
@@ -237,8 +198,7 @@ class OTAServerApplication(web.Application):
             (r"/", OTAServerMainHandler),
             (r"/publish", OTAServerPublishHandler),
             (r"/remove", OTAServerRemoveHandler),
-            (r"/notify", OTAServerNotifyHandler),
-            (r"/notifyv4", OTAServerNotifyv4Handler),
+            (r"/notify", OTAServerNotify),
             (r"/coap/url/.*", OTAServerCoapUrlHandler),
         ]
 
