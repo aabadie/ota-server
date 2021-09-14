@@ -1,3 +1,4 @@
 tornado>=6.0
-git+https://github.com/chrysn/aiocoap.git@0.4b3
+aiocoap>=0.4.1
 requests
+LinkHeader
