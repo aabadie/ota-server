@@ -65,6 +65,9 @@ class CoapServer():
 
     def __init__(self, upload_path, port=COAP_PORT):
         self.root_coap = resource.Site()
+        self.root_coap.add_resource(['.well-known', 'core'],
+                            resource.WKCResource(self.root_coap.get_resources_as_linkheader,
+                            impl_info=None))
         self.port = port
         self.upload_path = upload_path
         self._bootstrap_resources()
