@@ -33,14 +33,12 @@ def _get_versions_from_path(path):
         version = file.split('.')[-2]
         if version == 'latest':
             continue
-        if version == 'riot':
-            version = file.split('.')[-3]
-        if 'riot.suit' in file:
+        elif file.split('.')[-3] == "suit":
             versions[version]['manifest'] = file
-        if 'slot0' in file:
-            versions[version]['slot0'] = file
-        if 'slot1' in file:
-            versions[version]['slot1'] = file
+        else:
+            if 'files' not in versions[version]:
+                versions[version]['files'] = []
+            versions[version]['files'].append(file)
     return versions
 
 
@@ -114,12 +112,8 @@ class OTAServerNotify(tornado.web.RequestHandler):
         publish_id = self.request.body_arguments['publish_id'][0].decode()
         publish_path = _path_from_publish_id(publish_id)
 
-        _store_path = os.path.join(self.application.upload_path, publish_id)
-        base_filename = os.listdir(_store_path)[0].split('-')[0]
-
         manifest_url = os.path.join(
-            publish_path,
-            '{}-riot.suit_signed.{}.bin'.format(base_filename, version))
+            publish_path, 'riot.suit.{}.bin'.format(version))
 
         devices_urls = self.request.body_arguments['urls'][0].decode()
         logger.debug('Notifying devices %s of an update of %s',
@@ -151,7 +145,7 @@ class OTAServerPublishHandler(tornado.web.RequestHandler):
                 f.write(content)
             # Hack to determine if the file is a manifest and copy as latest
             _path_split = _path.split('.')
-            if 'suit' == _path_split[-3] or 'suit_signed' == _path_split[-3]:
+            if 'suit' == _path_split[-3]:
                 _path_split[-2] = 'latest'
             _path = '.'.join(_path_split)
             with open(_path, 'wb') as f:

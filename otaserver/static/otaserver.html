@@ -122,7 +122,7 @@ function remove_version(version, id) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for version in application['versions'].keys() %}
+                                    {% for version in list(application['versions']) %}
                                     <tr>
                                         <td>{{ version }}</td>
                                         <td>
@@ -130,12 +130,11 @@ function remove_version(version, id) {
                                             <button type="button" class="btn btn-link pr-0 pl-0" data-toggle="tooltip" title={{ application['versions'][version]['manifest'] }}>
                                                 <span class="badge badge-pill badge-info">Manifest</span>
                                             </button>
-                                            <button type="button" class="btn btn-link pr-0 pl-0" data-toggle="tooltip" title={{ application['versions'][version]['slot0'] }}>
-                                                <span class="badge badge-pill badge-info">Slot0</span>
+                                            {% for idx, file in enumerate(application['versions'][version]['files']) %}
+                                            <button type="button" class="btn btn-link pr-0 pl-0" data-toggle="tooltip" title={{ file }}>
+                                                <span class="badge badge-pill badge-info">payload{{ idx }}</span>
                                             </button>
-                                            <button type="button" class="btn btn-link pr-0 pl-0" data-toggle="tooltip" title={{ application['versions'][version]['slot1'] }}>
-                                                <span class="badge badge-pill badge-info">Slot1</span>
-                                            </button>
+                                            {% end %}
                                             </div>
                                         </td>
                                         <td style="float: right;">
